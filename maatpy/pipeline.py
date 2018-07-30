@@ -1,5 +1,4 @@
 from imblearn.pipeline import *
-from sklearn.utils import tosequence
 
 
 class Pipeline(Pipeline):

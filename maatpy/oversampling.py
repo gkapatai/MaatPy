@@ -17,7 +17,7 @@ class RandomOverSampler(RandomOverSampler):
                  (ii) 'majority': resample the majority class,
                  (iii) 'not minority': resample all classes apart of the minority class,
                  (iv) 'all': resample all classes, and (v) 'auto': correspond to 'all' with for over-sampling
-                 methods and 'not inority' for under-sampling methods. The classes targeted will be over-sampled or
+                 methods and 'not_minority' for under-sampling methods. The classes targeted will be over-sampled or
                  under-sampled to achieve an equal number of sample with the majority or minority class.
                - If "dict`", the keys correspond to the targeted classes. The values correspond to the desired number
                  of samples.
@@ -49,7 +49,7 @@ class SMOTE(SMOTE):
                  (ii) 'majority': resample the majority class,
                  (iii) 'not minority': resample all classes apart of the minority class,
                  (iv) 'all': resample all classes, and (v) 'auto': correspond to 'all' with for over-sampling
-                 methods and 'not inority' for under-sampling methods. The classes targeted will be over-sampled or
+                 methods and 'not_minority' for under-sampling methods. The classes targeted will be over-sampled or
                  under-sampled to achieve an equal number of sample with the majority or minority class.
                - If "dict`", the keys correspond to the targeted classes. The values correspond to the desired number
                  of samples.

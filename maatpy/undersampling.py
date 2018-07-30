@@ -1,5 +1,6 @@
 from imblearn.under_sampling import ClusterCentroids, RandomUnderSampler, TomekLinks
-
+from imblearn.utils.validation import check_target_type, hash_X_y
+from sklearn.utils import check_X_y
 
 class ClusterCentroids(ClusterCentroids):
     """
@@ -16,7 +17,7 @@ class ClusterCentroids(ClusterCentroids):
                  (ii) 'majority': resample the majority class,
                  (iii) 'not minority': resample all classes apart of the minority class,
                  (iv) 'all': resample all classes, and (v) 'auto': correspond to 'all' with for over-sampling
-                 methods and 'not inority' for under-sampling methods. The classes targeted will be over-sampled or
+                 methods and 'not_minority' for under-sampling methods. The classes targeted will be over-sampled or
                  under-sampled to achieve an equal number of sample with the majority or minority class.
                - If "dict`", the keys correspond to the targeted classes. The values correspond to the desired number
                  of samples.
@@ -57,7 +58,7 @@ class RandomUnderSampler(RandomUnderSampler):
                  (ii) 'majority': resample the majority class,
                  (iii) 'not minority': resample all classes apart of the minority class,
                  (iv) 'all': resample all classes, and (v) 'auto': correspond to 'all' with for over-sampling
-                 methods and 'not inority' for under-sampling methods. The classes targeted will be over-sampled or
+                 methods and 'not_minority' for under-sampling methods. The classes targeted will be over-sampled or
                  under-sampled to achieve an equal number of sample with the majority or minority class.
                - If "dict`", the keys correspond to the targeted classes. The values correspond to the desired number
                  of samples.
@@ -92,7 +93,7 @@ class TomekLinks(TomekLinks):
                  (ii) 'majority': resample the majority class,
                  (iii) 'not minority': resample all classes apart of the minority class,
                  (iv) 'all': resample all classes, and (v) 'auto': correspond to 'all' with for over-sampling
-                 methods and 'not inority' for under-sampling methods. The classes targeted will be over-sampled or
+                 methods and 'not_minority' for under-sampling methods. The classes targeted will be over-sampled or
                  under-sampled to achieve an equal number of sample with the majority or minority class.
                - If "dict`", the keys correspond to the targeted classes. The values correspond to the desired number
                  of samples.
@@ -111,3 +112,11 @@ class TomekLinks(TomekLinks):
         self.return_indices = return_indices
         self.n_jobs = n_jobs
 
+    def fit(self, X, y):
+        X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'])
+        y = check_target_type(y)
+        self.X_hash_, self.y_hash_ = hash_X_y(X, y)
+        # self.sampling_type is already checked in check_ratio
+        self.ratio_ = check_ratio(self.ratio, y, self._sampling_type)
+
+        return self
