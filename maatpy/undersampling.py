@@ -1,6 +1,8 @@
 from imblearn.under_sampling import ClusterCentroids, RandomUnderSampler, TomekLinks
 from imblearn.utils.validation import check_target_type, hash_X_y
 from sklearn.utils import check_X_y
+from maatpy.utils import check_ratio
+
 
 class ClusterCentroids(ClusterCentroids):
     """
@@ -21,7 +23,7 @@ class ClusterCentroids(ClusterCentroids):
                  under-sampled to achieve an equal number of sample with the majority or minority class.
                - If "dict`", the keys correspond to the targeted classes. The values correspond to the desired number
                  of samples.
-               - If callable, function taking "y" and returns a "dict". The keyS correspond to the targeted classes.
+               - If callable, function taking "y" and returns a "dict". The keys correspond to the targeted classes.
                  The values correspond to the desired number of samples.
         :param random_state: int, RandomState instance or None, optional (default=None)
                If int, random_state is the seed used by the random number generator; If RandomState instance,
@@ -62,7 +64,7 @@ class RandomUnderSampler(RandomUnderSampler):
                  under-sampled to achieve an equal number of sample with the majority or minority class.
                - If "dict`", the keys correspond to the targeted classes. The values correspond to the desired number
                  of samples.
-               - If callable, function taking "y" and returns a "dict". The keyS correspond to the targeted classes.
+               - If callable, function taking "y" and returns a "dict". The keys correspond to the targeted classes.
                  The values correspond to the desired number of samples.
         :param return_indices: bool, optional (default=False)
                Whether or not to return the indices of the samples randomly selected from the majority class.
@@ -97,7 +99,7 @@ class TomekLinks(TomekLinks):
                  under-sampled to achieve an equal number of sample with the majority or minority class.
                - If "dict`", the keys correspond to the targeted classes. The values correspond to the desired number
                  of samples.
-               - If callable, function taking "y" and returns a "dict". The keyS correspond to the targeted classes.
+               - If callable, function taking "y" and returns a "dict". The keys correspond to the targeted classes.
                  The values correspond to the desired number of samples.
         :param return_indices: bool, optional (default=False)
                Whether or not to return the indices of the samples randomly selected from the majority class.
@@ -113,10 +115,17 @@ class TomekLinks(TomekLinks):
         self.n_jobs = n_jobs
 
     def fit(self, X, y):
+        """
+
+        :param X: {array-like, sparse matrix}, shape (n_samples, n_features)
+               Matrix containing the data which have to be sampled.
+        :param y: array-like, shape (n_samples,)
+               Corresponding label for each sample in X.
+        :return: X_resampled, y_resampled
+        """
         X, y = check_X_y(X, y, accept_sparse=['csr', 'csc'])
         y = check_target_type(y)
         self.X_hash_, self.y_hash_ = hash_X_y(X, y)
-        # self.sampling_type is already checked in check_ratio
         self.ratio_ = check_ratio(self.ratio, y, self._sampling_type)
 
         return self

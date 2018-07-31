@@ -21,7 +21,7 @@ class RandomOverSampler(RandomOverSampler):
                  under-sampled to achieve an equal number of sample with the majority or minority class.
                - If "dict`", the keys correspond to the targeted classes. The values correspond to the desired number
                  of samples.
-               - If callable, function taking "y" and returns a "dict". The keyS correspond to the targeted classes.
+               - If callable, function taking "y" and returns a "dict". The keys correspond to the targeted classes.
                  The values correspond to the desired number of samples.
         :param random_state: int, RandomState instance or None, optional (default=None)
                If int, random_state is the seed used by the random number generator; If RandomState instance,
@@ -53,7 +53,7 @@ class SMOTE(SMOTE):
                  under-sampled to achieve an equal number of sample with the majority or minority class.
                - If "dict`", the keys correspond to the targeted classes. The values correspond to the desired number
                  of samples.
-               - If callable, function taking "y" and returns a "dict". The keyS correspond to the targeted classes.
+               - If callable, function taking "y" and returns a "dict". The keys correspond to the targeted classes.
                  The values correspond to the desired number of samples.
         :param random_state: int, RandomState instance or None, optional (default=None)
                If int, random_state is the seed used by the random number generator; If RandomState instance,

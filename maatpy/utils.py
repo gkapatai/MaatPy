@@ -2,12 +2,11 @@
 
 Utility functions for checking ratio provided for over- and under-sampling
 
-Adjusted from imblearn.utils.validation
+Copied and/or adjusted from imblearn.utils.validation
 
 """
 import warnings
 from collections import Counter
-from imblearn.utils.validation import _ratio_dict
 from sklearn.externals import six
 
 import numpy as np
@@ -36,8 +35,92 @@ def _ratio_majority(y, sampling_type):
         class_majority = max(target_stats, key=target_stats.get)
         n_sample_minority = min(target_stats.values())
         ratio_ = {key: n_sample_minority
-                 for key in target_stats.keys()
-                 if key == class_majority}
+                  for key in target_stats.keys()
+                  if key == class_majority}
+    else:
+        raise NotImplementedError
+
+    return ratio_
+
+
+def _ratio_not_minority(y, sampling_type):
+    """
+    Returns ratio by targeting all classes but not the minority.
+    Edited to allow for more than one minority class.
+    :param y: ndarray, shape (n_samples,)
+           The target array.
+    :param sampling_type: str,
+           The type of sampling. Can be either 'over-sampling', 'under-sampling', 'clean-sampling' and 'ensemble'.
+    :return: ratio_ [dict]
+    """
+    target_stats = Counter(y)
+    if sampling_type == 'over-sampling':
+        n_sample_majority = max(target_stats.values())
+        class_minority = min(target_stats, key=target_stats.get)
+        ratio_ = {key: n_sample_majority - value
+                  for (key, value) in target_stats.items()
+                  if key != class_minority}
+    elif (sampling_type == 'under-sampling' or
+          sampling_type == 'clean-sampling'):
+        n_sample_minority = min(target_stats.values())
+        class_minority = min(target_stats, key=target_stats.get)
+        all_minority = [key for key in target_stats.keys()
+                        if target_stats[key]/float(target_stats[class_minority]) < 2]
+        ratio_ = {key: n_sample_minority
+                  for key in target_stats.keys()
+                  if key not in all_minority}
+    else:
+        raise NotImplementedError
+
+    return ratio_
+
+
+def _ratio_minority(y, sampling_type):
+    """
+    Returns ratio by targeting the minority class only.
+    Copied from imblearn.utils.validation to avoid calling protected function
+    :param y: ndarray, shape (n_samples,)
+           The target array.
+    :param sampling_type: str,
+           The type of sampling. Can be either 'over-sampling', 'under-sampling', 'clean-sampling' and 'ensemble'.
+    :return: ratio_ [dict]
+    """
+    target_stats = Counter(y)
+    if sampling_type == 'over-sampling':
+        n_sample_majority = max(target_stats.values())
+        class_minority = min(target_stats, key=target_stats.get)
+        ratio_ = {key: n_sample_majority - value
+                  for (key, value) in target_stats.items()
+                  if key == class_minority}
+    elif (sampling_type == 'under-sampling' or
+          sampling_type == 'clean-sampling'):
+        raise ValueError("'ratio'='minority' cannot be used with"
+                         " under-sampler and clean-sampler.")
+    else:
+        raise NotImplementedError
+
+    return ratio_
+
+
+def _ratio_all(y, sampling_type):
+    """
+    Returns ratio by targeting all classes.
+    Copied from imblearn.utils.validation to avoid calling protected function
+    :param y: ndarray, shape (n_samples,)
+           The target array.
+    :param sampling_type: str,
+           The type of sampling. Can be either 'over-sampling', 'under-sampling', 'clean-sampling' and 'ensemble'.
+    :return: ratio_ [dict]
+    """
+    target_stats = Counter(y)
+    if sampling_type == 'over-sampling':
+        n_sample_majority = max(target_stats.values())
+        ratio_ = {key: n_sample_majority - value
+                  for (key, value) in target_stats.items()}
+    elif (sampling_type == 'under-sampling' or
+          sampling_type == 'clean-sampling'):
+        n_sample_minority = min(target_stats.values())
+        ratio_ = {key: n_sample_minority for key in target_stats.keys()}
     else:
         raise NotImplementedError
 
@@ -110,8 +193,8 @@ def _ratio_dict(ratio, y, sampling_type):
 
 def _ratio_auto(y, sampling_type):
     """
-    Returns ratio auto for over-sampling and not-minority for under-sampling.
-    Copied from imblearn.utils.validation. Calls edited functions _ratio_all and _ratio_not_minority
+    Returns ratio all for over-sampling and not-minority for under-sampling.
+    Copied from imblearn.utils.validation. Calls edited function _ratio_not_minority
     :param y: ndarray, shape (n_samples,)
            The target array.
     :param sampling_type: str,
