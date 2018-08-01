@@ -55,7 +55,8 @@ class SMOTEENN(SMOTEENN):
                Matrix containing the data which have to be sampled.
         :param y: array-like, shape (n_samples,)
                Corresponding label for each sample in X.
-        :return: X_resampled, y_resampled
+        :return: object; Return self
+
         """
         return super().fit(X, y)
 
