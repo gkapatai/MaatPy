@@ -1,5 +1,7 @@
 from imblearn.over_sampling import RandomOverSampler, SMOTE
 
+__all__ = ['RandomOverSampler', 'SMOTE']
+
 
 class RandomOverSampler(RandomOverSampler):
     """

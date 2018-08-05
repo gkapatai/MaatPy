@@ -11,8 +11,7 @@ from sklearn.externals import six
 
 import numpy as np
 
-SAMPLING_KIND = ('over-sampling', 'under-sampling', 'clean-sampling',
-                 'ensemble')
+SAMPLING_KIND = ('over-sampling', 'under-sampling', 'clean-sampling')
 TARGET_KIND = ('binary', 'multiclass')
 
 
@@ -109,7 +108,7 @@ def _ratio_all(y, sampling_type):
     :param y: ndarray, shape (n_samples,)
            The target array.
     :param sampling_type: str,
-           The type of sampling. Can be either 'over-sampling', 'under-sampling', 'clean-sampling' and 'ensemble'.
+           The type of sampling. Can be either 'over-sampling', 'under-sampling', 'clean-sampling'.
     :return: ratio_ [dict]
     """
     target_stats = Counter(y)

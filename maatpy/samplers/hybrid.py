@@ -1,6 +1,7 @@
 import logging
-
 from imblearn.combine import SMOTEENN, SMOTETomek
+
+__all__ = ['SMOTETomek', 'SMOTEENN']
 
 
 class SMOTEENN(SMOTEENN):
@@ -8,7 +9,8 @@ class SMOTEENN(SMOTEENN):
     Class to perform over-sampling using SMOTE and cleaning using ENN.
     Combine over- and under-sampling using SMOTE and Edited Nearest Neighbours.
 
-    Inherits from imblearn.combine.SMOTEENN
+    Inherits from imblearn.combine.SMOTEENN. Edited to perform under-sampling with ENN first to remove problematic
+    data points and then perform oversampling with SMOTE.
     """
 
     def __init__(self,
@@ -82,7 +84,8 @@ class SMOTETomek(SMOTETomek):
     Class to perform over-sampling using SMOTE and cleaning using Tomek links.
     Combine over- and under-sampling using SMOTE and Tomek links.
 
-    Inherits from imblearn.combine.SMOTETomek
+    Inherits from imblearn.combine.SMOTETomek. Edited to perform under-sampling first to remove Tomek links
+    and then perform oversampling with SMOTE.
     """
 
     def __init__(self,

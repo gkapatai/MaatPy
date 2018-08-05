@@ -1,13 +1,10 @@
 import numpy as np
-
-from collections import Counter
-from imblearn.ensemble import BalanceCascade, EasyEnsemble
-from sklearn.utils import check_random_state, safe_indexing
-from sklearn.model_selection import cross_val_predict
-from maatpy.undersampling import RandomUnderSampler
+from imblearn.ensemble import EasyEnsemble
+from sklearn.utils import check_random_state
+from maatpy.samplers.undersampling import RandomUnderSampler
 from maatpy.utils import check_ratio
 
-MAX_INT = np.iinfo(np.int32).max
+__all__ = ['EasyEnsemble']
 
 
 class EasyEnsemble(EasyEnsemble):
@@ -16,7 +13,9 @@ class EasyEnsemble(EasyEnsemble):
     This method iteratively select a random subset and make an ensemble of the
     different sets.
 
-    Inherits from imblearn.ensemble.EasyEnsemble
+    Inherits from imblearn.ensemble.EasyEnsemble. Edited to:
+    - output a single dataset instead of subsets which allows it to work with a classifier in make_pipeline
+    - accept a dictionary as ratio; previously it would crash when one was given.
     """
     def __init__(self,
                  ratio='auto',
@@ -57,7 +56,9 @@ class EasyEnsemble(EasyEnsemble):
 
     def fit(self, X, y):
         """
-        Find the classes statistics before performing sampling
+        Find the classes statistics before performing sampling.
+        Adapted to allow for ratio = 'dict' by recalculating the dict.values = dict.value / n_subsets.
+
 
         :param X: {array-like, sparse matrix}, shape (n_samples, n_features)
                Matrix containing the data which have to be sampled.
@@ -74,6 +75,7 @@ class EasyEnsemble(EasyEnsemble):
     def _sample(self, X, y):
         """
         Resample the dataset.
+        Adapted to return a combined result instead of an a collection of the subset results.
 
         :param X: {array-like, sparse matrix}, shape (n_samples, n_features)
                Matrix containing the data which have to be sampled.
@@ -91,7 +93,7 @@ class EasyEnsemble(EasyEnsemble):
         for _ in range(self.n_subsets):
             rus = RandomUnderSampler(
                 ratio=self.ratio_, return_indices=True,
-                random_state=random_state.randint(MAX_INT),
+                random_state=random_state,
                 replacement=self.replacement)
             sel_x, sel_y, sel_idx = rus.fit_sample(X, y)
             X_resampled.append(sel_x)
