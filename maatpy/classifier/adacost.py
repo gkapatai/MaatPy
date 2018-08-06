@@ -198,7 +198,7 @@ class AdaCost(AdaBoostClassifier):
                 raise ValueError("algorithm %s is not supported" % self.algorithm)
 
             # re-normalise sample_weight
-            # sample_weight = sample_weight / sample_weight.sum(dtype=np.float64)
+            sample_weight = sample_weight / sample_weight.sum(dtype=np.float64)
 
             print(iboost, len(np.where(incorrect==True)[0]), estimator_weight, estimator_error)
 
