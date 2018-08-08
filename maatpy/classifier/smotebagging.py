@@ -10,6 +10,7 @@ class SMOTEBagging(BaggingClassifier):
     """
     Implementation of SMOTEBagging.
 
+    Reference: Hanifah et al, Applied Mathematical Sciences, Vol. 9, 2015, no. 138, 6857 - 6865
     """
 
     def __init__(self,

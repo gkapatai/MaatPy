@@ -100,8 +100,9 @@ class BalancedBaggingClassifier(BalancedBaggingClassifier):
         self.replacement = replacement
 
     def _validate_estimator(self, default=DecisionTreeClassifier()):
-        """Check the estimator and the n_estimator attribute, set the
-        `base_estimator_` attribute."""
+        """
+        Check the estimator and the n_estimator attribute, set the 'base_estimator_' attribute.
+        """
         if not isinstance(self.n_estimators, (numbers.Integral, np.integer)):
             raise ValueError("n_estimators must be an integer, "
                              "got {0}.".format(type(self.n_estimators)))

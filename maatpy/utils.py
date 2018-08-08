@@ -11,6 +11,8 @@ from sklearn.externals import six
 
 import numpy as np
 
+__all__ = ['check_ratio']
+
 SAMPLING_KIND = ('over-sampling', 'under-sampling', 'clean-sampling')
 TARGET_KIND = ('binary', 'multiclass')
 

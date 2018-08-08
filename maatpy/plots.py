@@ -90,7 +90,7 @@ def plot_decision_function(X, y, clf, ax):
            Matrix containing the data which have to be sampled.
     :param y: array-like, shape (n_samples,)
            Corresponding label for each sample in X.
-    :param clf: classifier or pipeline object
+    :param clf: classifier or pipeline object that implements the predict function
     :param ax: matplotlib.pyplot.axis object
     :return:
     """
@@ -118,7 +118,7 @@ def plot_resampling(X, y, sampling, ax):
            Matrix containing the data which have to be sampled.
     :param y: array-like, shape (n_samples,)
            Corresponding label for each sample in X.
-    :param sampling: sampler object
+    :param sampling: sampler object or pipeline object that implements the fit_sample function
     :param ax: matplotlib.pyplot.axis object
     :return:
     """

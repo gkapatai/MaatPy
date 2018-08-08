@@ -14,6 +14,7 @@ from sklearn.utils import check_array
 from sklearn.utils import safe_indexing
 from imblearn.utils import check_neighbors_object
 
+__all__ = ['SMOTEBoost']
 
 MAX_INT = np.iinfo(np.int32).max
 
@@ -46,31 +47,17 @@ class SMOTEBoost(AdaBoostClassifier):
                  n_jobs=1):
         """
 
-        :param base_estimator: object, optional (default=DecisionTreeClassifier)
+        :param k_neighbors: int, optional (default=5)
+               Number of nearest neighbors.
+        :param base_estimator:object, optional (default=DecisionTreeClassifier)
                The base estimator from which the boosted ensemble is built.
                Support for sample weighting is required, as well as proper 'classes_' and 'n_classes_' attributes.
         :param n_estimators: int, optional (default=50)
                The maximum number of estimators at which boosting is terminated.
                In case of perfect fit, the learning procedure is stopped early.
-        :param k_neighbors: int, optional (default=5)
-               Number of nearest neighbors.
-        :param max_samples: int or float, optional (default=1.0)
-               The number of samples to draw from X to train each base estimator.
-               - If int, then draw `max_samples` samples.
-               - If float, then draw `max_samples * X.shape[0]` samples.
-        :param max_features: int or float, optional (default=1.0)
-               The number of features to draw from X to train each base estimator.
-               - If int, then draw `max_features` features.
-               - If float, then draw `max_features * X.shape[1]` features.
-        :param bootstrap: boolean, optional (default=True)
-               Whether samples are drawn with replacement.
-        :param bootstrap_features: boolean, optional (default=False)
-               Whether features are drawn with replacement.
-        :param oob_score: bool, optional (default=False)
-               Whether to use out-of-bag samples to estimate the generalization error
-        :param warm_start: bool, optional (default=False)
-               When set to True, reuse the solution of the previous call to fit and add more estimators to
-               the ensemble, otherwise, just fit a whole new ensemble.
+        :param learning_rate: float, optional (default=1.)
+               Learning rate shrinks the contribution of each classifier by "learning_rate".
+               There is a trade-off between "learning_rate" and "n_estimators".
         :param ratio: str, dict, or callable, optional (default='auto')
                Ratio to use for resampling the data set.
                - If "str", has to be one of: (i) 'minority': resample the minority class;
@@ -83,15 +70,19 @@ class SMOTEBoost(AdaBoostClassifier):
                  of samples.
                - If callable, function taking "y" and returns a "dict". The keys correspond to the targeted classes.
                  The values correspond to the desired number of samples.
-        :param n_jobs: int, optional (default=1)
-               The number of jobs to run in parallel for both `fit` and `predict`.
-               If -1, then the number of jobs is set to the number of cores.
+        :param algorithm: {'SAMME', 'SAMME.R'}, optional (default='SAMME.R')
+               If 'SAMME.R' then use the SAMME.R real boosting algorithm. The "base_estimator" must support
+               calculation of class probabilities.
+               If 'SAMME' then use the SAMME discrete boosting algorithm.
+               The SAMME.R algorithm typically converges faster than SAMME, achieving a lower test error with
+               fewer boosting iterations.
         :param random_state: int, RandomState instance or None, optional (default=None)
                If int, random_state is the seed used by the random number generator; If RandomState instance,
                random_state is the random number generator; If None, the random number generator is the RandomState
                instance used by 'np.random'.
-        :param verbose: int, optional (default=0)
-               Controls the verbosity of the building process.
+        :param n_jobs: int, optional (default=1)
+               The number of jobs to run in parallel for both `fit` and `predict`.
+               If -1, then the number of jobs is set to the number of cores.
         """
         super(SMOTEBoost, self).__init__(
             base_estimator=base_estimator,
@@ -104,7 +95,7 @@ class SMOTEBoost(AdaBoostClassifier):
         self.ratio = ratio
         self.n_jobs=n_jobs
 
-    def _validate_estimator(self):
+    def _validate_estimator(self, default=AdaBoostClassifier()):
         """
         Check the estimator and the n_estimator attribute, set the
         'base_estimator_' attribute.
