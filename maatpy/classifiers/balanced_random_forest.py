@@ -1,23 +1,29 @@
+# coding: utf-8
 import numbers
 import warnings
+import six
 import numpy as np
-from joblib import Parallel
-from joblib import delayed
+from joblib import (Parallel,
+                    delayed)
 from scipy.sparse import issparse
 from sklearn.base import clone
 from sklearn.exceptions import DataConversionWarning
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import BalancedRandomForestClassifier
 from sklearn.ensemble.forest import _generate_sample_indices
 from maatpy.samplers.undersampling import RandomUnderSampler
-from sklearn.utils import check_random_state
-from sklearn.utils import check_array
-from sklearn.utils import compute_sample_weight
+from sklearn.utils import (check_random_state,
+                           check_array,
+                           column_or_1d,
+                           compute_sample_weight,
+                           compute_class_weight)
+from sklearn.utils.multiclass import check_classification_targets
+
 
 MAX_INT = np.iinfo(np.int32).max
 
 
-class BalancedRandomForestClassifier(RandomForestClassifier):
+class BalancedRandomForestClassifier(BalancedRandomForestClassifier):
     """
     Implementation of the Balanced Random Forest
 
@@ -28,7 +34,10 @@ class BalancedRandomForestClassifier(RandomForestClassifier):
                  n_estimators=10,
                  bootstrap=True,
                  oob_score=False,
-                 ratio='auto',
+                 max_depth=None,
+                 criterion="gini",
+                 max_features="auto",
+                 ratio="auto",
                  replacement=False,
                  n_jobs=1,
                  random_state=None,
@@ -75,20 +84,22 @@ class BalancedRandomForestClassifier(RandomForestClassifier):
                If not given, all classes are supposed to have weight one. For multi-output problems, a list of dicts
                can be provided in the same order as the columns of y.
         """
-        super(RandomForestClassifier, self).__init__(
-            base_estimator=DecisionTreeClassifier(random_state=random_state),
+        super(BalancedRandomForestClassifier, self).__init__(
             n_estimators=n_estimators,
             bootstrap=bootstrap,
             oob_score=oob_score,
+            max_depth=max_depth,
+            criterion=criterion,
+            max_features=max_features,
             n_jobs=n_jobs,
             random_state=random_state,
             verbose=verbose,
             warm_start=warm_start,
             class_weight=class_weight)
 
-        self.random_state = random_state
         self.ratio = ratio
         self.replacement = replacement
+        self.base_estimator = DecisionTreeClassifier(random_state=random_state)
 
     def _validate_estimator(self, default=DecisionTreeClassifier()):
         """
@@ -114,9 +125,12 @@ class BalancedRandomForestClassifier(RandomForestClassifier):
         if isinstance(self.ratio, dict):
             raise ValueError("'dict' type cannot be accepted for ratio in this class; "
                              "use alternative options")
+        if isinstance(self.class_weight, int):
+            raise ValueError("'class_weight' can accept dict, list of dicts, 'balanced', 'balanced_subsample' or None;"\
+                             " got {0} instead".format(self.class_weight))
 
         self.rus = RandomUnderSampler(ratio=self.ratio, replacement=self.replacement,
-                                      return_indices=True)
+                                      return_indices=True, random_state=self.random_state)
         self.base_estimator_ = base_estimator
 
     def fit(self, X, y, sample_weight=None):
@@ -136,6 +150,8 @@ class BalancedRandomForestClassifier(RandomForestClassifier):
                a negative weight in either child node.
         :return: object; Return self
         """
+        # Check parameters
+        self._validate_estimator()
         # Validate or convert input data
         X = check_array(X, accept_sparse="csc", dtype=np.float32)
         y = check_array(y, accept_sparse='csc', ensure_2d=False, dtype=None)
@@ -145,7 +161,6 @@ class BalancedRandomForestClassifier(RandomForestClassifier):
             # Pre-sort indices to avoid that each individual tree of the
             # ensemble sorts the indices.
             X.sort_indices()
-
         # Remap output
         n_samples, self.n_features_ = X.shape
 
@@ -173,9 +188,6 @@ class BalancedRandomForestClassifier(RandomForestClassifier):
                 sample_weight = sample_weight * expanded_class_weight
             else:
                 sample_weight = expanded_class_weight
-
-        # Check parameters
-        self._validate_estimator()
 
         if not self.bootstrap and self.oob_score:
             raise ValueError("Out of bag estimation only available"
@@ -268,7 +280,7 @@ class BalancedRandomForestClassifier(RandomForestClassifier):
             if sample_weight is None:
                 curr_sample_weight = np.ones((n_samples,), dtype=np.float64)
             else:
-                curr_sample_weight = np.delete(sample_weight, indices)
+                curr_sample_weight = sample_weight[indices]
 
             indices = _generate_sample_indices(tree.random_state, n_samples)
             sample_counts = np.bincount(indices, minlength=n_samples)
@@ -287,26 +299,3 @@ class BalancedRandomForestClassifier(RandomForestClassifier):
 
         return tree
 
-
-if __name__ == "__main__":
-    from sklearn.datasets import make_classification
-    from sklearn.model_selection import StratifiedShuffleSplit
-    from sklearn.metrics import cohen_kappa_score
-
-    X, y = make_classification(n_samples=1000, n_features=2,
-                               n_informative=2, n_redundant=0, n_repeated=0,
-                               n_classes=2, n_clusters_per_class=1,
-                               weights=[0.90, 0.1],
-                               class_sep=0.8, random_state=39)
-
-    sss = StratifiedShuffleSplit(n_splits=5, test_size=0.3, random_state=39)
-    sss.get_n_splits(X, y)
-    for train_index, test_index in sss.split(X, y):
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y[train_index], y[test_index]
-
-    clf = BalancedRandomForestClassifier(random_state=39)
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-    kappa = cohen_kappa_score(y_test, y_pred)
-    print(kappa)

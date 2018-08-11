@@ -20,10 +20,10 @@ class Dataset(Bunch):
         self.feature_names = feature_names
         self.target_names = target_names
 
-    def make_imbalance(self, sampling_strategy=None, random_state=None):
+    def make_imbalance(self, ratio=None, random_state=None):
         """
         Built on the imblearn.make_imbalance function
-        :param sampling_strategy: dict or list
+        :param ratio: dict or list
                Ratio to use for resampling the data set.
                - When 'dict', the keys correspond to the targeted classes. The values correspond to the desired number
                  of samples for each targeted class.
@@ -36,54 +36,45 @@ class Dataset(Bunch):
                instance used by `np.random`.
         :return:
         """
-        """
-        Built on the imblearn.make_imbalance function
-        :param ratio: dict, required
-               The keys correspond to the targeted classes whereas the values correspond to the desired number of
-               samples for each targeted class.
-        :param random_state: int, RandomState instance or None, optional (default=None)
-               If int, random_state is the seed used by the random number generator; If RandomState instance,
-               random_state is the random number generator; If None, the random number generator is the RandomState
-               instance used by `np.random`.
-        :return:
-        """
         x, y = check_X_y(self.data, self.target)
         original_dataset_size = len(y)
         n_classes = len(self.target_names)
 
-        if isinstance(sampling_strategy, dict):
-            ratio = sampling_strategy
+        if isinstance(ratio, dict):
+            ratio_ = ratio
 
-        elif isinstance(sampling_strategy, list):
-            weights = sampling_strategy
+        elif isinstance(ratio, list):
+            weights = ratio
             if len(weights) != n_classes:
                 raise ValueError("{} classes available but only {} values provided".format(n_classes, len(weights)))
-            ratio = {}
+            ratio_ = {}
             for i in range(n_classes):
-                ratio[i] = weights[i] * original_dataset_size
+                ratio_[i] = int(round(weights[i] * original_dataset_size, 0))
 
         else:
-            raise TypeError("Expected dict or list; {} provided".format(type(sampling_strategy)))
+            raise TypeError("Expected dict or list; {} provided".format(type(ratio)))
 
-        if sum(ratio.values()) < original_dataset_size:
-            rus = RandomUnderSampler(ratio=ratio, random_state=random_state)
+        if sum(ratio_.values()) < original_dataset_size:
+            rus = RandomUnderSampler(ratio=ratio_, random_state=random_state)
             self.data, self.target = rus.fit_sample(x, y)
 
-        elif sum(ratio.values()) == original_dataset_size:
+        elif sum(ratio_.values()) == original_dataset_size:
             original_distribution = Counter(y)
             interim_ratio = {}
-            for key in ratio:
-                if ratio[key] >= original_distribution[key]:
+            for key in ratio_:
+                if ratio_[key] >= original_distribution[key]:
                     interim_ratio[key] = original_distribution[key]
                 else:
-                    interim_ratio[key] = ratio[key]
-            rus = RandomUnderSampler(ratio=interim_ratio, random_state=random_state)
-            x_int, y_int = rus.fit_sample(x, y)
+                    interim_ratio[key] = ratio_[key]
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                rus = RandomUnderSampler(ratio=interim_ratio, random_state=random_state)
+                x_int, y_int = rus.fit_sample(x, y)
             with warnings.catch_warnings():
                 # Silencing RandomOverSampler UserWarning: After over-sampling, the number of samples in class A will
                 # be larger than the number of samples in the majority class
                 warnings.simplefilter("ignore")
-                ros = RandomOverSampler(ratio=ratio, random_state=random_state)
+                ros = RandomOverSampler(ratio=ratio_, random_state=random_state)
                 self.data, self.target = ros.fit_sample(x_int, y_int)
 
         else:
@@ -158,3 +149,4 @@ def simulate_dataset(n_samples=100, n_features=2, n_informative=2, n_redundant=0
     target_names = ['class#{}'.format(i) for i in np.unique(target)]
 
     return Dataset(data, target, feature_names, target_names)
+

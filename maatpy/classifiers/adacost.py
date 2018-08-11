@@ -1,3 +1,4 @@
+# coding: utf-8
 import numpy as np
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
@@ -99,7 +100,7 @@ class AdaCost(AdaBoostClassifier):
         else:
             sample_weight = check_array(sample_weight, ensure_2d=False)
         # Normalize existing weights
-        sample_weight = sample_weight / sample_weight.sum(dtype=np.float64)
+        #sample_weight = sample_weight / sample_weight.sum(dtype=np.float64)
 
         # Check that the sample weights sum is positive
         if sample_weight.sum() <= 0:
@@ -322,28 +323,29 @@ if __name__ == "__main__":
     from sklearn.datasets import make_classification
     from sklearn.model_selection import StratifiedShuffleSplit
     from sklearn.metrics import cohen_kappa_score
-<<<<<<< HEAD
-
-    X, y = make_classification(n_samples=1000, n_features=2,
-                               n_informative=2, n_redundant=0, n_repeated=0,
-                               n_classes=3, n_clusters_per_class=1,
-                               weights=[0.5, 0.4, 0.1],
-                               class_sep=0.8, random_state=39)
-
-    sss = StratifiedShuffleSplit(n_splits=5, test_size=0.3, random_state=39)
-    sss.get_n_splits(X, y)
-    for train_index, test_index in sss.split(X, y):
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y[train_index], y[test_index]
-
-    clf = AdaCost(random_state=39, algorithm="adacost")
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-    kappa = cohen_kappa_score(y_test, y_pred)
-    print(kappa)
-=======
     from imblearn.metrics import geometric_mean_score
     from sklearn.metrics import f1_score
+
+    # seed = 30
+    # X, y = make_classification(n_samples=100, n_features=2,
+    #                            n_informative=2, n_redundant=0, n_repeated=0,
+    #                            n_classes=3, n_clusters_per_class=1,
+    #                            weights=[0.5, 0.4, 0.1],
+    #                            class_sep=0.8, random_state=seed)
+    #
+    # sss = StratifiedShuffleSplit(n_splits=5, test_size=0.3, random_state=seed)
+    # sss.get_n_splits(X, y)
+    # for train_index, test_index in sss.split(X, y):
+    #     X_train, X_test = X[train_index], X[test_index]
+    #     y_train, y_test = y[train_index], y[test_index]
+    #
+    # clf = AdaCost(random_state=seed, algorithm="adacost")
+    # clf.fit(X_train, y_train)
+    # y_pred = clf.predict(X_test)
+    # kappa = cohen_kappa_score(y_test, y_pred)
+    # gms = geometric_mean_score(y_test, y_pred, average="weighted")
+    # mco = f1_score(y_test, y_pred, average="weighted")
+    # print(kappa, gms, mco)
 
     outfp = open('validation.txt', 'w')
     outfp.write('seed\tAdaBoost\tAdaCost\tAdaC1\tAdaC2\tAdaC3\n')
@@ -398,4 +400,4 @@ if __name__ == "__main__":
         line +=str(kappa) + '\n'
 
         outfp.write(line)
->>>>>>> completed adacost and added balanced_random_forest
+

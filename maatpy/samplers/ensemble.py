@@ -2,7 +2,7 @@ import numpy as np
 from imblearn.ensemble import EasyEnsemble
 from sklearn.utils import check_random_state
 from maatpy.samplers.undersampling import RandomUnderSampler
-from maatpy.utils import check_ratio
+from imblearn.utils import check_ratio
 
 __all__ = ['EasyEnsemble']
 
@@ -68,7 +68,7 @@ class EasyEnsemble(EasyEnsemble):
         """
         super(EasyEnsemble, self).fit(X, y)
         if isinstance(self.ratio, dict):
-            self.ratio = {k: v/self.n_subsets for k, v in self.ratio.iteritems()}
+            self.ratio = {k: v for k, v in self.ratio.iteritems()}
         self.ratio_ = check_ratio(self.ratio, y, 'under-sampling')
         return self
 
@@ -101,11 +101,8 @@ class EasyEnsemble(EasyEnsemble):
             if self.return_indices:
                 idx_under.append(sel_idx)
 
-        X_ = np.concatenate(np.array(X_resampled))
-        y_ = np.array(y_resampled).flatten()
-
         if self.return_indices:
-            idx_ = np.unique(np.array(idx_under).flatten())
-            return X_, y_, idx_
+            return (np.array(X_resampled), np.array(y_resampled),
+                    np.array(idx_under))
         else:
-            return X_, y_
+            return np.array(X_resampled), np.array(y_resampled)

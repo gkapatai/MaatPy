@@ -1,17 +1,12 @@
-import logging
 from imblearn.combine import SMOTEENN, SMOTETomek
+from maatpy.samplers.oversampling import SMOTE
+from maatpy.samplers.undersampling import (EditedNearestNeighbours,
+                                           TomekLinks)
 
-__all__ = ['SMOTETomek', 'SMOTEENN']
+__all__ = ['SMOTEENN', 'SMOTETomek']
 
 
 class SMOTEENN(SMOTEENN):
-    """
-    Class to perform over-sampling using SMOTE and cleaning using ENN.
-    Combine over- and under-sampling using SMOTE and Edited Nearest Neighbours.
-
-    Inherits from imblearn.combine.SMOTEENN. Edited to perform under-sampling with ENN first to remove problematic
-    data points and then perform oversampling with SMOTE.
-    """
 
     def __init__(self,
                  ratio='auto',
@@ -19,6 +14,7 @@ class SMOTEENN(SMOTEENN):
                  smote=None,
                  enn=None):
         """
+        Creates an object of the imblearn.combine.SMOTEENN class.
 
         :param ratio: str, dict, or callable, optional (default='auto')
                Ratio to use for resampling the data set.
@@ -43,15 +39,40 @@ class SMOTEENN(SMOTEENN):
                The :class: imblearn.under_sampling.EditedNearestNeighbours object to use. If none provide a
                :class: imblearn.under_sampling.EditedNearestNeighbours object with default parameters will be given.
         """
-        super(SMOTEENN, self).__init__()
-        self.ratio = ratio
-        self.random_state = random_state
-        self.smote = smote
-        self.enn = enn
-        self.logger = logging.getLogger(__name__)
+        super(SMOTEENN, self).__init__(ratio=ratio,
+                                       random_state=random_state,
+                                       smote=smote,
+                                       enn=enn)
+
+    def _validate_estimator(self):
+        """
+        Private function to validate SMOTE and ENN objects.
+        :return:
+        """
+
+        if self.smote is not None:
+            if isinstance(self.smote, SMOTE):
+                self.smote_ = self.smote
+            else:
+                raise ValueError('smote needs to be a SMOTE object.'
+                                 'Got {} instead.'.format(type(self.smote)))
+        else:
+            self.smote_ = SMOTE(ratio=self.ratio, k_neighbors=3,
+                                random_state=self.random_state)
+
+        if self.enn is not None:
+            if isinstance(self.enn, EditedNearestNeighbours):
+                self.enn_ = self.enn
+            else:
+                raise ValueError('enn needs to be an EditedNearestNeighbours.'
+                                 ' Got {} instead.'.format(type(self.enn)))
+        else:
+            self.enn_ = EditedNearestNeighbours(ratio="all", kind_sel="mode",
+                                                random_state=self.random_state)
 
     def fit(self, X, y):
         """
+        Find the classes statistics before to perform sampling.
 
         :param X: {array-like, sparse matrix}, shape (n_samples, n_features)
                Matrix containing the data which have to be sampled.
@@ -60,7 +81,7 @@ class SMOTEENN(SMOTEENN):
         :return: object; Return self
 
         """
-        return super().fit(X, y)
+        return super(SMOTEENN, self).fit(X, y)
 
     def _sample(self, X, y):
         """
@@ -72,10 +93,9 @@ class SMOTEENN(SMOTEENN):
                Corresponding label for each sample in X.
         :return: X_resampled, y_resampled
         """
-        super()._validate_estimator()
+        self._validate_estimator()
 
         X_res, y_res = self.enn_.fit_sample(X, y)
-
         return self.smote_.fit_sample(X_res, y_res)
 
 
@@ -118,23 +138,49 @@ class SMOTETomek(SMOTETomek):
                The :class: imblearn.under_sampling.TomekLinks object to use. If none provide a
                :class: imblearn.under_sampling.TomekLinks object with default parameters will be given.
         """
-        super(SMOTETomek, self).__init__()
-        self.ratio = ratio
-        self.random_state = random_state
-        self.smote = smote
-        self.tomek = tomek
-        self.logger = logging.getLogger(__name__)
+        super(SMOTETomek, self).__init__(ratio=ratio,
+                                         random_state=random_state,
+                                         smote=smote,
+                                         tomek=tomek)
 
     def fit(self, X, y):
         """
+        Find the classes statistics before to perform sampling.
 
         :param X: {array-like, sparse matrix}, shape (n_samples, n_features)
                Matrix containing the data which have to be sampled.
         :param y: array-like, shape (n_samples,)
                Corresponding label for each sample in X.
-        :return: X_resampled, y_resampled
+        :return: object; Return self
+
         """
-        return super().fit(X, y)
+        return super(SMOTETomek, self).fit(X, y)
+
+    def _validate_estimator(self):
+        """
+        Private function to validate SMOTE and ENN objects
+        :return:
+        """
+
+        if self.smote is not None:
+            if isinstance(self.smote, SMOTE):
+                self.smote_ = self.smote
+            else:
+                raise ValueError('smote needs to be a SMOTE object.'
+                                 'Got {} instead.'.format(type(self.smote)))
+        else:
+            self.smote_ = SMOTE(ratio=self.ratio, k_neighbors=3,
+                                random_state=self.random_state)
+
+        if self.tomek is not None:
+            if isinstance(self.tomek, TomekLinks):
+                self.tomek_ = self.tomek
+            else:
+                raise ValueError('tomek needs to be a TomekLinks object.'
+                                 'Got {} instead.'.format(type(self.tomek)))
+        else:
+            self.tomek_ = TomekLinks(ratio="all",
+                                     random_state=self.random_state)
 
     def _sample(self, X, y):
         """
@@ -146,8 +192,7 @@ class SMOTETomek(SMOTETomek):
                Corresponding label for each sample in X.
         :return: X_resampled, y_resampled
         """
-        super()._validate_estimator()
-
+        self._validate_estimator()
         X_res, y_res = self.tomek_.fit_sample(X, y)
 
         return self.smote_.fit_sample(X_res, y_res)

@@ -1,17 +1,14 @@
-from imblearn.over_sampling import RandomOverSampler, SMOTE
+from imblearn.over_sampling import (RandomOverSampler,
+                                    SMOTE)
 
 __all__ = ['RandomOverSampler', 'SMOTE']
 
 
 class RandomOverSampler(RandomOverSampler):
-    """
-    Class to perform random over-sampling by picking samples at random with replacement.
-
-    This is just a dummy class that creates an object of imblearn.under_sampling.RandomOverSampler class.
-    """
 
     def __init__(self, ratio='auto', random_state=None):
         """
+        Creates an object of the imblearn.over_sampling.RandomOverSampler class.
 
         :param ratio: str, dict, or callable, optional (default='auto')
                Ratio to use for resampling the data set.
@@ -30,20 +27,16 @@ class RandomOverSampler(RandomOverSampler):
                random_state is the random number generator; If None, the random number generator is the RandomState
                instance used by 'np.random'.
         """
-        super(RandomOverSampler, self).__init__(ratio=ratio, random_state=random_state)
+        super(RandomOverSampler, self).__init__(ratio=ratio,
+                                                random_state=random_state)
 
 
 class SMOTE(SMOTE):
-    """
-    Class to perform over-sampling using SMOTE - Synthetic Minority Over-sampling Technique; variants
-    Borderline 1 and 2 and SVN SMOTE implemented.
-
-    This is just a dummy class that creates an object of imblearn.under_sampling.SMOTE class.
-    """
 
     def __init__(self, ratio='auto', random_state=None, k_neighbors=5, m_neighbors=10, out_step=0.5,
                  kind='regular', svm_estimator=None, n_jobs=1):
         """
+        Creates an object of imblearn.under_sampling.SMOTE class.
 
         :param ratio: str, dict, or callable, optional (default='auto')
                Ratio to use for resampling the data set.
@@ -78,10 +71,11 @@ class SMOTE(SMOTE):
         :param n_jobs: int, optional (default=1)
                The number of threads to open if possible.
         """
-        super(SMOTE, self).__init__(ratio=ratio, random_state=random_state)
-        self.kind = kind
-        self.k_neighbors = k_neighbors
-        self.m_neighbors = m_neighbors
-        self.out_step = out_step
-        self.svm_estimator = svm_estimator
-        self.n_jobs = n_jobs
+        super(SMOTE, self).__init__(ratio=ratio,
+                                    random_state=random_state,
+                                    k_neighbors=k_neighbors,
+                                    m_neighbors=m_neighbors,
+                                    out_step=out_step,
+                                    kind=kind,
+                                    svm_estimator=svm_estimator,
+                                    n_jobs=n_jobs)

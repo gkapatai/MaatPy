@@ -10,7 +10,7 @@ __all__ = ['plot_confusion_matrix', 'plot_decision_function', 'plot_learning_cur
 
 
 def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
-                        n_jobs=1, train_sizes=[.5, .75, 1.0], random_state=None):
+                        n_jobs=1, train_sizes=None, random_state=None):
     """
     Generate a simple plot of the test and training learning curve.
 
@@ -47,6 +47,8 @@ def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
            instance used by 'np.random'.
     :return:
     """
+    if train_sizes is None:
+        train_sizes = [.5, .75, 1.0]
 
     plt.figure()
     plt.title(title)
@@ -58,6 +60,7 @@ def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
     train_sizes, train_scores, test_scores = learning_curve(
         estimator, X, y, cv=cv, n_jobs=n_jobs, train_sizes=train_sizes,
         scoring=kappa_scorer, random_state=random_state)
+    # trains_scores_mean, = [np.mean(), np.std, ]
     train_scores_mean = np.mean(train_scores, axis=1)
     train_scores_std = np.std(train_scores, axis=1)
     test_scores_mean = np.mean(test_scores, axis=1)
@@ -78,7 +81,7 @@ def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
     return plt
 
 
-def plot_decision_function(X, y, clf, ax):
+def plot_decision_function(X, y, clf, ax, plot_step=0.02):
     """
     Plot the decision function of a classifier given some data
 
@@ -94,7 +97,6 @@ def plot_decision_function(X, y, clf, ax):
     :param ax: matplotlib.pyplot.axis object
     :return:
     """
-    plot_step = 0.02
     x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
     y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
     xx, yy = np.meshgrid(np.arange(x_min, x_max, plot_step),

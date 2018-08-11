@@ -116,7 +116,7 @@ class BalancedBaggingClassifier(BalancedBaggingClassifier):
         else:
             base_estimator = clone(default)
         # minor change >>>
-        if isinstance(self.ratio, dict):
+        if isinstance(self.ratio, dict) and self.ratio != {}:
             raise ValueError("'dict' type cannot be accepted for ratio in this class; "
                              "use alternative options")
         # <<<
@@ -137,4 +137,3 @@ class BalancedBaggingClassifier(BalancedBaggingClassifier):
         """
 
         return super(BalancedBaggingClassifier, self)._fit(X, y, self.max_samples, sample_weight=None)
-
