@@ -1,17 +1,17 @@
 # coding: utf-8
 import numpy as np
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.utils import check_random_state
-from sklearn.utils import check_X_y
-from sklearn.utils import check_array
-from sklearn.utils import compute_class_weight
-from sklearn.utils.multiclass import check_classification_targets
-from sklearn.utils.validation import check_is_fitted
-from sklearn.utils import column_or_1d
 from sklearn.base import is_regressor
+from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble.forest import BaseForest
 from sklearn.tree.tree import BaseDecisionTree
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.utils import (check_random_state,
+                           check_X_y,
+                           check_array,
+                           compute_class_weight,
+                           column_or_1d)
+from sklearn.utils.multiclass import check_classification_targets
+from sklearn.utils.validation import check_is_fitted
 
 __all__ = ['AdaCost']
 
@@ -62,7 +62,7 @@ class AdaCost(AdaBoostClassifier):
 
     def fit(self, X, y, sample_weight=None):
         """
-        Build a boosted classifier/regressor from the training set (X, y).
+        Build a boosted classifier from the training set (X, y).
 
         :param X:{array-like, sparse matrix}, shape (n_samples, n_features)
                Matrix containing the training data.
@@ -95,7 +95,7 @@ class AdaCost(AdaBoostClassifier):
             # Initialize weights to class weights
             # assign class weight to each sample index
             sample_weight = np.copy(y).astype(float)
-            for n in range(len(self.classes_)):
+            for n in range(len(self.classes)):
                 sample_weight[y == n] = self.class_weight_[n]
         else:
             sample_weight = check_array(sample_weight, ensure_2d=False)
@@ -195,6 +195,9 @@ class AdaCost(AdaBoostClassifier):
             estimator_error = np.mean(np.average(incorrect, weights=sample_weight*self.cost_, axis=0))
         elif self.algorithm == "adac3":
             estimator_error = np.mean(np.average(incorrect, weights=sample_weight*np.power(self.cost_, 2), axis=0))
+        else:
+            raise ValueError("Algorithms 'adacost', 'adac1', 'adac2' and 'adac3' are accepted;"\
+                             " got {0}".format(self.algorithm))
         # Stop if classification is perfect
         if estimator_error <= 0:
             return sample_weight, 1., 0.
@@ -270,7 +273,7 @@ class AdaCost(AdaBoostClassifier):
                 "The number of classes has to be greater than one; got %d"
                 % len(cls))
 
-        self.classes_ = cls
+        self.classes = cls
 
         return np.asarray(y, dtype=np.float64, order='C')
 
@@ -291,7 +294,7 @@ class AdaCost(AdaBoostClassifier):
         #    return self.classes_.take(pred == 0, axis=0)
         # <<<
 
-        return self.classes_.take(np.argmax(pred, axis=1), axis=0)
+        return self.classes.take(np.argmax(pred, axis=1), axis=0)
 
     def decision_function(self, X):
         """
@@ -317,87 +320,3 @@ class AdaCost(AdaBoostClassifier):
         #    return pred.sum(axis=1)
         # <<<
         return pred
-
-
-if __name__ == "__main__":
-    from sklearn.datasets import make_classification
-    from sklearn.model_selection import StratifiedShuffleSplit
-    from sklearn.metrics import cohen_kappa_score
-    from imblearn.metrics import geometric_mean_score
-    from sklearn.metrics import f1_score
-
-    # seed = 30
-    # X, y = make_classification(n_samples=100, n_features=2,
-    #                            n_informative=2, n_redundant=0, n_repeated=0,
-    #                            n_classes=3, n_clusters_per_class=1,
-    #                            weights=[0.5, 0.4, 0.1],
-    #                            class_sep=0.8, random_state=seed)
-    #
-    # sss = StratifiedShuffleSplit(n_splits=5, test_size=0.3, random_state=seed)
-    # sss.get_n_splits(X, y)
-    # for train_index, test_index in sss.split(X, y):
-    #     X_train, X_test = X[train_index], X[test_index]
-    #     y_train, y_test = y[train_index], y[test_index]
-    #
-    # clf = AdaCost(random_state=seed, algorithm="adacost")
-    # clf.fit(X_train, y_train)
-    # y_pred = clf.predict(X_test)
-    # kappa = cohen_kappa_score(y_test, y_pred)
-    # gms = geometric_mean_score(y_test, y_pred, average="weighted")
-    # mco = f1_score(y_test, y_pred, average="weighted")
-    # print(kappa, gms, mco)
-
-    outfp = open('validation.txt', 'w')
-    outfp.write('seed\tAdaBoost\tAdaCost\tAdaC1\tAdaC2\tAdaC3\n')
-    for seed in range(50):
-        X, y = make_classification(n_samples=100, n_features=2,
-                                   n_informative=2, n_redundant=0, n_repeated=0,
-                                   n_classes=3, n_clusters_per_class=1,
-                                   weights=[0.5, 0.4, 0.1],
-                                   class_sep=0.8, random_state=seed)
-
-        sss = StratifiedShuffleSplit(n_splits=5, test_size=0.3, random_state=seed)
-        sss.get_n_splits(X, y)
-        for train_index, test_index in sss.split(X, y):
-            X_train, X_test = X[train_index], X[test_index]
-            y_train, y_test = y[train_index], y[test_index]
-
-        line = str(seed) + '\t'
-        clf = AdaBoostClassifier(random_state=seed)
-        clf.fit(X_train, y_train)
-        y_pred = clf.predict(X_test)
-        kappa = cohen_kappa_score(y_test, y_pred)
-        gms = geometric_mean_score(y_test, y_pred, average="weighted")
-        mco = f1_score(y_test, y_pred, average="weighted")
-        line += str(kappa) + '\t'
-        clf = AdaCost(random_state=seed, algorithm="adacost")
-        clf.fit(X_train, y_train)
-        y_pred = clf.predict(X_test)
-        kappa = cohen_kappa_score(y_test, y_pred)
-        gms = geometric_mean_score(y_test, y_pred, average="weighted")
-        mco = f1_score(y_test, y_pred, average="weighted")
-        line += str(kappa) + '\t'
-        clf = AdaCost(random_state=seed, algorithm="adac1")
-        clf.fit(X_train, y_train)
-        y_pred = clf.predict(X_test)
-        kappa = cohen_kappa_score(y_test, y_pred)
-        gms = geometric_mean_score(y_test, y_pred, average="weighted")
-        mco = f1_score(y_test, y_pred, average="weighted")
-        line += str(kappa) + '\t'
-        clf = AdaCost(random_state=seed, algorithm="adac2")
-        clf.fit(X_train, y_train)
-        y_pred = clf.predict(X_test)
-        kappa = cohen_kappa_score(y_test, y_pred)
-        gms = geometric_mean_score(y_test, y_pred, average="weighted")
-        mco = f1_score(y_test, y_pred, average="weighted")
-        line += str(kappa) + '\t'
-        clf = AdaCost(random_state=seed, algorithm="adac3")
-        clf.fit(X_train, y_train)
-        y_pred = clf.predict(X_test)
-        kappa = cohen_kappa_score(y_test, y_pred)
-        gms = geometric_mean_score(y_test, y_pred, average="weighted")
-        mco = f1_score(y_test, y_pred, average="weighted")
-        line +=str(kappa) + '\n'
-
-        outfp.write(line)
-

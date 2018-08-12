@@ -1,18 +1,18 @@
 import numbers
 import numpy as np
-from sklearn.base import clone
-from sklearn.ensemble import AdaBoostClassifier
-from maatpy.samplers.oversampling import SMOTE
 from collections import Counter
-from sklearn.base import is_regressor
+from sklearn.base import (clone,
+                          is_regressor)
+from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble.forest import BaseForest
 from sklearn.preprocessing import normalize
 from sklearn.tree.tree import BaseDecisionTree
-from sklearn.utils import check_random_state
-from sklearn.utils import check_X_y
-from sklearn.utils import check_array
-from sklearn.utils import safe_indexing
+from sklearn.utils import (check_random_state,
+                           check_X_y,
+                           check_array,
+                           safe_indexing)
 from imblearn.utils import check_neighbors_object
+from maatpy.samplers.oversampling import SMOTE
 
 __all__ = ['SMOTEBoost']
 
@@ -84,7 +84,7 @@ class SMOTEBoost(AdaBoostClassifier):
                The number of jobs to run in parallel for both `fit` and `predict`.
                If -1, then the number of jobs is set to the number of cores.
         """
-        super(SMOTEBoost, self).__init__(
+        super(AdaBoostClassifier, self).__init__(
             base_estimator=base_estimator,
             n_estimators=n_estimators,
             learning_rate=learning_rate,
@@ -118,7 +118,7 @@ class SMOTEBoost(AdaBoostClassifier):
         else:
             base_estimator = clone(default)
 
-        if isinstance(self.ratio, dict):
+        if isinstance(self.ratio, dict) and self.ratio != {}:
             raise ValueError("'dict' type cannot be accepted for ratio in this class; "
                              "use alternative options")
 
@@ -142,6 +142,8 @@ class SMOTEBoost(AdaBoostClassifier):
                Corresponding label for each sample in X.
         :return: object; Return self
         """
+        if self.algorithm not in ('SAMME', 'SAMME.R'):
+            raise ValueError("algorithm %s is not supported" % self.algorithm)
 
         # Check parameters
         if self.learning_rate <= 0:
@@ -243,27 +245,3 @@ class SMOTEBoost(AdaBoostClassifier):
                 sample_weight /= sample_weight_sum
 
         return self
-
-
-if __name__ == "__main__":
-    from sklearn.datasets import make_classification
-    from sklearn.model_selection import StratifiedShuffleSplit
-    from sklearn.metrics import cohen_kappa_score
-
-    X, y = make_classification(n_samples=1000, n_features=2,
-                               n_informative=2, n_redundant=0, n_repeated=0,
-                               n_classes=2, n_clusters_per_class=1,
-                               weights=[0.90, 0.1],
-                               class_sep=0.8, random_state=39)
-
-    sss = StratifiedShuffleSplit(n_splits=5, test_size=0.3, random_state=39)
-    sss.get_n_splits(X, y)
-    for train_index, test_index in sss.split(X, y):
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y[train_index], y[test_index]
-
-    clf = SMOTEBoost(random_state=39)
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-    kappa = cohen_kappa_score(y_test, y_pred)
-    print(kappa)

@@ -149,4 +149,3 @@ def simulate_dataset(n_samples=100, n_features=2, n_informative=2, n_redundant=0
     target_names = ['class#{}'.format(i) for i in np.unique(target)]
 
     return Dataset(data, target, feature_names, target_names)
-

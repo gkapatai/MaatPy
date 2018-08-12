@@ -85,6 +85,15 @@ class Test_Dataset(unittest.TestCase):
         assert_allclose(myclass.data, self.data, rtol=self.r_tol)
         assert_array_equal(myclass.target, self.target)
 
+    def test_load_dataset(self):
+        myclass = Dataset()
+        self.assertTrue(myclass.data is None)
+        self.assertTrue(myclass.target is None)
+        myclass.load_from_csv(self.csv_path, output_column="Class")
+        self.assertFalse(myclass.data is None)
+        self.assertFalse(myclass.target is None)
+
+
     def test_make_imbalance_ratio_type_error(self):
         myclass = Dataset(data=self.data, target=self.target, feature_names=['X1', 'X2'], target_names=[0, 1])
         self.assertRaises(TypeError, myclass.make_imbalance, ratio="auto", random_state=self.seed)

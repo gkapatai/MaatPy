@@ -2,8 +2,11 @@ import numbers
 import numpy as np
 from sklearn.base import clone
 from sklearn.ensemble import BaggingClassifier
+from sklearn.tree import DecisionTreeClassifier
 from maatpy.samplers.oversampling import SMOTE
 from maatpy.pipeline import Pipeline
+
+__all__ = ['SMOTEBagging']
 
 
 class SMOTEBagging(BaggingClassifier):
@@ -92,7 +95,7 @@ class SMOTEBagging(BaggingClassifier):
         self.k_neighbors = k_neighbors
         self.ratio = ratio
 
-    def _validate_estimator(self, default=BaggingClassifier()):
+    def _validate_estimator(self, default=DecisionTreeClassifier()):
         """
         Check the estimator and the n_estimator attribute, set the
         'base_estimator_' attribute.
@@ -114,7 +117,7 @@ class SMOTEBagging(BaggingClassifier):
         else:
             base_estimator = clone(default)
 
-        if isinstance(self.ratio, dict):
+        if isinstance(self.ratio, dict) and self.ratio!={}:
             raise ValueError("'dict' type cannot be accepted for ratio in this class; "
                              "use alternative options")
 
@@ -135,27 +138,3 @@ class SMOTEBagging(BaggingClassifier):
         """
 
         return self._fit(X, y, self.max_samples, sample_weight=None)
-
-
-if __name__ == "__main__":
-    from sklearn.datasets import make_classification
-    from sklearn.model_selection import StratifiedShuffleSplit
-    from sklearn.metrics import cohen_kappa_score
-
-    X, y = make_classification(n_samples=1000, n_features=2,
-                               n_informative=2, n_redundant=0, n_repeated=0,
-                               n_classes=2, n_clusters_per_class=1,
-                               weights=[0.90, 0.1],
-                               class_sep=0.8, random_state=39)
-
-    sss = StratifiedShuffleSplit(n_splits=5, test_size=0.3, random_state=39)
-    sss.get_n_splits(X, y)
-    for train_index, test_index in sss.split(X, y):
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y[train_index], y[test_index]
-
-    clf = SMOTEBagging(random_state=39)
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-    kappa = cohen_kappa_score(y_test, y_pred)
-    print(kappa)

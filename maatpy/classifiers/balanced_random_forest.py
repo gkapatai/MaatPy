@@ -1,29 +1,26 @@
 # coding: utf-8
 import numbers
 import warnings
-import six
+
 import numpy as np
 from joblib import (Parallel,
                     delayed)
 from scipy.sparse import issparse
 from sklearn.base import clone
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble.forest import _generate_sample_indices
 from sklearn.exceptions import DataConversionWarning
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import BalancedRandomForestClassifier
-from sklearn.ensemble.forest import _generate_sample_indices
-from maatpy.samplers.undersampling import RandomUnderSampler
 from sklearn.utils import (check_random_state,
                            check_array,
-                           column_or_1d,
-                           compute_sample_weight,
-                           compute_class_weight)
-from sklearn.utils.multiclass import check_classification_targets
+                           compute_sample_weight)
 
+from maatpy.samplers.undersampling import RandomUnderSampler
 
 MAX_INT = np.iinfo(np.int32).max
 
 
-class BalancedRandomForestClassifier(BalancedRandomForestClassifier):
+class BalancedRandomForestClassifier(RandomForestClassifier):
     """
     Implementation of the Balanced Random Forest
 
@@ -298,4 +295,3 @@ class BalancedRandomForestClassifier(BalancedRandomForestClassifier):
             tree.fit(X_res, y_res, sample_weight=sample_weight, check_input=False)
 
         return tree
-

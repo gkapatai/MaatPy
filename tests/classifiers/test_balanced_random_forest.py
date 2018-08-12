@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 from maatpy.classifiers import BalancedRandomForestClassifier
 from sklearn import datasets
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.utils.validation import check_random_state
 from sklearn.utils.testing import (assert_array_almost_equal,
                                    assert_array_equal,
@@ -164,3 +165,22 @@ class Test_BalancedRandomForestClassifier(unittest.TestCase):
 
         self.assertRaises(ValueError, BalancedRandomForestClassifier(ratio='minority', random_state=0).fit,
                           self.X, self.y)
+
+    def test_imb_performance(self):
+        from maatpy.dataset import simulate_dataset
+        from sklearn.metrics import cohen_kappa_score
+        from sklearn.model_selection import StratifiedShuffleSplit
+        imb = simulate_dataset(n_samples=100, n_features=2, n_classes=2, weights=[0.9, 0.1], random_state=0)
+        sss = StratifiedShuffleSplit(n_splits=5, test_size=0.3, random_state=0)
+        sss.get_n_splits(imb.data, imb.target)
+        for train_index, test_index in sss.split(imb.data, imb.target):
+            X_train, X_test = imb.data[train_index], imb.data[test_index]
+            y_train, y_test = imb.target[train_index], imb.target[test_index]
+        orig_clf = RandomForestClassifier(random_state=0)
+        orig_clf.fit(X_train, y_train)
+        orig_score = cohen_kappa_score(orig_clf.predict(X_test), y_test)
+        clf = BalancedRandomForestClassifier(random_state=0)
+        clf.fit(X_train, y_train)
+        score = cohen_kappa_score(clf.predict(X_test), y_test)
+        assert score >= orig_score, "Failed with score = %f; RandomForestClassifier score= %f" % \
+                                                              (score, orig_score)

@@ -22,19 +22,19 @@ from sklearn.utils.testing import (assert_array_equal,
                                    assert_warns,
                                    assert_warns_message)
 
-from imblearn.datasets import make_imbalance
-from maatpy.classifiers import BalancedBaggingClassifier
+from maatpy.dataset import Dataset
+from maatpy.classifiers import SMOTEBagging
 from maatpy.pipeline import make_pipeline
-from maatpy.samplers.undersampling import  RandomUnderSampler
+from maatpy.samplers.oversampling import SMOTE
 
 iris = load_iris()
+imb_iris = Dataset(data=iris.data, target=iris.target, feature_names=iris.feature_names,
+                   target_names=iris.target_names)
+imb_iris.make_imbalance(ratio={0: 20, 1: 30, 2: 50}, random_state=0)
 
-
-def test_balanced_bagging_classifier():
+def test_smote_bagging():
     # Check classification for various parameter settings.
-    X, y = make_imbalance(iris.data, iris.target, ratio={0: 20, 1: 25, 2: 50},
-                          random_state=0)
-    X_train, X_test, y_train, y_test = train_test_split(X, y,
+    X_train, X_test, y_train, y_test = train_test_split(imb_iris.data, imb_iris.target,
                                                         random_state=0)
     grid = ParameterGrid({"max_samples": [0.5, 1.0],
                           "max_features": [1, 2, 4],
@@ -48,27 +48,27 @@ def test_balanced_bagging_classifier():
                            KNeighborsClassifier(),
                            SVC()]:
         for params in grid:
-            BalancedBaggingClassifier(
+            SMOTEBagging(
                 base_estimator=base_estimator,
+                k_neighbors=3,
                 random_state=0,
                 **params).fit(X_train, y_train).predict(X_test)
 
 
 def test_bootstrap_samples():
     # Test that bootstrapping samples generate non-perfect base estimators.
-    X, y = make_imbalance(iris.data, iris.target, ratio={0: 20, 1: 25, 2: 50},
-                          random_state=0)
-    X_train, X_test, y_train, y_test = train_test_split(X, y,
+    X_train, X_test, y_train, y_test = train_test_split(iris.data, iris.target,
                                                         random_state=0)
 
     base_estimator = DecisionTreeClassifier().fit(X_train, y_train)
 
     # without bootstrap, all trees are perfect on the training set
     # disable the resampling by passing an empty dictionary.
-    ensemble = BalancedBaggingClassifier(
+    ensemble = SMOTEBagging(
         base_estimator=DecisionTreeClassifier(),
         max_samples=1.0,
         bootstrap=False,
+        k_neighbors=3,
         n_estimators=10,
         ratio={},
         random_state=0).fit(X_train, y_train)
@@ -77,10 +77,11 @@ def test_bootstrap_samples():
             base_estimator.score(X_train, y_train))
 
     # with bootstrap, trees are no longer perfect on the training set
-    ensemble = BalancedBaggingClassifier(
+    ensemble = SMOTEBagging(
         base_estimator=DecisionTreeClassifier(),
         max_samples=1.0,
         bootstrap=True,
+        k_neighbors=3,
         random_state=0).fit(X_train, y_train)
 
     assert (ensemble.score(X_train, y_train) <
@@ -89,21 +90,19 @@ def test_bootstrap_samples():
 
 def test_bootstrap_features():
     # Test that bootstrapping features may generate duplicate features.
-    X, y = make_imbalance(iris.data, iris.target, ratio={0: 20, 1: 25, 2: 50},
-                          random_state=0)
-    X_train, X_test, y_train, y_test = train_test_split(X, y,
+    X_train, X_test, y_train, y_test = train_test_split(imb_iris.data, imb_iris.target,
                                                         random_state=0)
 
-    ensemble = BalancedBaggingClassifier(
+    ensemble = SMOTEBagging(
         base_estimator=DecisionTreeClassifier(),
         max_features=1.0,
         bootstrap_features=False,
         random_state=0).fit(X_train, y_train)
 
     for features in ensemble.estimators_features_:
-        assert np.unique(features).shape[0] == X.shape[1]
+        assert np.unique(features).shape[0] == imb_iris.data.shape[1]
 
-    ensemble = BalancedBaggingClassifier(
+    ensemble = SMOTEBagging(
         base_estimator=DecisionTreeClassifier(),
         max_features=1.0,
         bootstrap_features=True,
@@ -111,34 +110,19 @@ def test_bootstrap_features():
 
     unique_features = [np.unique(features).shape[0]
                        for features in ensemble.estimators_features_]
-    assert np.median(unique_features) < X.shape[1]
+    assert np.median(unique_features) < imb_iris.data.shape[1]
 
 
 def test_probability():
     # Predict probabilities.
-    X, y = make_imbalance(iris.data, iris.target, ratio={0: 20, 1: 25, 2: 50},
-                          random_state=0)
-    X_train, X_test, y_train, y_test = train_test_split(X, y,
+    X_train, X_test, y_train, y_test = train_test_split(imb_iris.data, imb_iris.target,
                                                         random_state=0)
 
     with np.errstate(divide="ignore", invalid="ignore"):
         # Normal case
-        ensemble = BalancedBaggingClassifier(
-            base_estimator=DecisionTreeClassifier(),
+        ensemble = SMOTEBagging(
+            base_estimator=DecisionTreeClassifier(), k_neighbors=3,
             random_state=0).fit(X_train, y_train)
-
-        assert_array_almost_equal(np.sum(ensemble.predict_proba(X_test),
-                                         axis=1),
-                                  np.ones(len(X_test)))
-
-        assert_array_almost_equal(ensemble.predict_proba(X_test),
-                                  np.exp(ensemble.predict_log_proba(X_test)))
-
-        # Degenerate case, where some classes are missing
-        ensemble = BalancedBaggingClassifier(
-            base_estimator=LogisticRegression(),
-            random_state=0,
-            max_samples=5).fit(X_train, y_train)
 
         assert_array_almost_equal(np.sum(ensemble.predict_proba(X_test),
                                          axis=1),
@@ -151,13 +135,11 @@ def test_probability():
 def test_oob_score_classification():
     # Check that oob prediction is a good estimation of the generalization
     # error.
-    X, y = make_imbalance(iris.data, iris.target, ratio={0: 20, 1: 25, 2: 50},
-                          random_state=0)
-    X_train, X_test, y_train, y_test = train_test_split(X, y,
+    X_train, X_test, y_train, y_test = train_test_split(imb_iris.data, imb_iris.target,
                                                         random_state=0)
 
     for base_estimator in [DecisionTreeClassifier(), SVC()]:
-        clf = BalancedBaggingClassifier(
+        clf = SMOTEBagging(
             base_estimator=base_estimator,
             n_estimators=100,
             bootstrap=True,
@@ -170,7 +152,7 @@ def test_oob_score_classification():
 
         # Test with few estimators
         assert_warns(UserWarning,
-                     BalancedBaggingClassifier(
+                     SMOTEBagging(
                          base_estimator=base_estimator,
                          n_estimators=1,
                          bootstrap=True,
@@ -182,19 +164,17 @@ def test_oob_score_classification():
 
 def test_single_estimator():
     # Check singleton ensembles.
-    X, y = make_imbalance(iris.data, iris.target, ratio={0: 20, 1: 25, 2: 50},
-                          random_state=0)
-    X_train, X_test, y_train, y_test = train_test_split(X, y,
+    X_train, X_test, y_train, y_test = train_test_split(imb_iris.data, imb_iris.target,
                                                         random_state=0)
 
-    clf1 = BalancedBaggingClassifier(
+    clf1 = SMOTEBagging(
         base_estimator=KNeighborsClassifier(),
         n_estimators=1,
         bootstrap=False,
         bootstrap_features=False,
         random_state=0).fit(X_train, y_train)
 
-    clf2 = make_pipeline(RandomUnderSampler(
+    clf2 = make_pipeline(SMOTE(
         random_state=clf1.estimators_[0].steps[0][1].random_state),
                          KNeighborsClassifier()).fit(X_train, y_train)
 
@@ -203,43 +183,42 @@ def test_single_estimator():
 
 def test_error():
     # Test that it gives proper exception on deficient input.
-    X, y = make_imbalance(iris.data, iris.target, ratio={0: 20, 1: 25, 2: 50})
     base = DecisionTreeClassifier()
-
+    X, y = [imb_iris.data, imb_iris.target]
     # Test n_estimators
     assert_raises(ValueError,
-                  BalancedBaggingClassifier(base, n_estimators=1.5).fit, X, y)
+                  SMOTEBagging(base, n_estimators=1.5).fit, X, y)
     assert_raises(ValueError,
-                  BalancedBaggingClassifier(base, n_estimators=-1).fit, X, y)
+                  SMOTEBagging(base, n_estimators=-1).fit, X, y)
 
     # Test max_samples
     assert_raises(ValueError,
-                  BalancedBaggingClassifier(base, max_samples=-1).fit, X, y)
+                  SMOTEBagging(base, max_samples=-1).fit, X, y)
     assert_raises(ValueError,
-                  BalancedBaggingClassifier(base, max_samples=0.0).fit, X, y)
+                  SMOTEBagging(base, max_samples=0.0).fit, X, y)
     assert_raises(ValueError,
-                  BalancedBaggingClassifier(base, max_samples=2.0).fit, X, y)
+                  SMOTEBagging(base, max_samples=2.0).fit, X, y)
     assert_raises(ValueError,
-                  BalancedBaggingClassifier(base, max_samples=1000).fit, X, y)
+                  SMOTEBagging(base, max_samples=1000).fit, X, y)
     assert_raises(ValueError,
-                  BalancedBaggingClassifier(base, max_samples="foobar").fit,
+                  SMOTEBagging(base, max_samples="foobar").fit,
                   X, y)
 
     # Test max_features
     assert_raises(ValueError,
-                  BalancedBaggingClassifier(base, max_features=-1).fit, X, y)
+                  SMOTEBagging(base, max_features=-1).fit, X, y)
     assert_raises(ValueError,
-                  BalancedBaggingClassifier(base, max_features=0.0).fit, X, y)
+                  SMOTEBagging(base, max_features=0.0).fit, X, y)
     assert_raises(ValueError,
-                  BalancedBaggingClassifier(base, max_features=2.0).fit, X, y)
+                  SMOTEBagging(base, max_features=2.0).fit, X, y)
     assert_raises(ValueError,
-                  BalancedBaggingClassifier(base, max_features=5).fit, X, y)
+                  SMOTEBagging(base, max_features=5).fit, X, y)
     assert_raises(ValueError,
-                  BalancedBaggingClassifier(base, max_features="foobar").fit,
+                  SMOTEBagging(base, max_features="foobar").fit,
                   X, y)
 
     # Test support of decision_function
-    assert not (hasattr(BalancedBaggingClassifier(base).fit(X, y),
+    assert not (hasattr(SMOTEBagging(base).fit(X, y),
                         'decision_function'))
 
 
@@ -253,33 +232,31 @@ def test_gridsearch():
     parameters = {'n_estimators': (1, 2),
                   'base_estimator__C': (1, 2)}
 
-    GridSearchCV(BalancedBaggingClassifier(SVC()),
+    GridSearchCV(SMOTEBagging(SVC()),
                  parameters,
                  scoring="roc_auc").fit(X, y)
 
 
 def test_base_estimator():
     # Check base_estimator and its default values.
-    X, y = make_imbalance(iris.data, iris.target, ratio={0: 20, 1: 25, 2: 50},
-                          random_state=0)
-    X_train, X_test, y_train, y_test = train_test_split(X, y,
+    X_train, X_test, y_train, y_test = train_test_split(imb_iris.data, imb_iris.target,
                                                         random_state=0)
 
-    ensemble = BalancedBaggingClassifier(None,
+    ensemble = SMOTEBagging(None,
                                          n_jobs=3,
                                          random_state=0).fit(X_train, y_train)
 
     assert isinstance(ensemble.base_estimator_.steps[-1][1],
                       DecisionTreeClassifier)
 
-    ensemble = BalancedBaggingClassifier(DecisionTreeClassifier(),
+    ensemble = SMOTEBagging(DecisionTreeClassifier(),
                                          n_jobs=3,
                                          random_state=0).fit(X_train, y_train)
 
     assert isinstance(ensemble.base_estimator_.steps[-1][1],
                       DecisionTreeClassifier)
 
-    ensemble = BalancedBaggingClassifier(Perceptron(),
+    ensemble = SMOTEBagging(Perceptron(),
                                          n_jobs=3,
                                          random_state=0).fit(X_train, y_train)
 
@@ -288,24 +265,22 @@ def test_base_estimator():
 
 
 def test_bagging_with_pipeline():
-    X, y = make_imbalance(iris.data, iris.target, ratio={0: 20, 1: 25, 2: 50},
-                          random_state=0)
-    estimator = BalancedBaggingClassifier(
+    estimator = SMOTEBagging(
         make_pipeline(SelectKBest(k=1),
                       DecisionTreeClassifier()),
         max_features=2)
-    estimator.fit(X, y).predict(X)
+    estimator.fit(imb_iris.data, imb_iris.target).predict(imb_iris.data)
 
 
 def test_warm_start(random_state=42):
     # Test if fitting incrementally with warm start gives a forest of the
     # right size and the same results as a normal fit.
-    X, y = make_hastie_10_2(n_samples=20, random_state=1)
+    X, y = make_hastie_10_2(n_samples=100, random_state=1)
 
     clf_ws = None
     for n_estimators in [5, 10]:
         if clf_ws is None:
-            clf_ws = BalancedBaggingClassifier(n_estimators=n_estimators,
+            clf_ws = SMOTEBagging(n_estimators=n_estimators,
                                                random_state=random_state,
                                                warm_start=True)
         else:
@@ -313,7 +288,7 @@ def test_warm_start(random_state=42):
         clf_ws.fit(X, y)
         assert len(clf_ws) == n_estimators
 
-    clf_no_ws = BalancedBaggingClassifier(n_estimators=10,
+    clf_no_ws = SMOTEBagging(n_estimators=10,
                                           random_state=random_state,
                                           warm_start=False)
     clf_no_ws.fit(X, y)
@@ -324,8 +299,8 @@ def test_warm_start(random_state=42):
 
 def test_warm_start_smaller_n_estimators():
     # Test if warm start'ed second fit with smaller n_estimators raises error.
-    X, y = make_hastie_10_2(n_samples=20, random_state=1)
-    clf = BalancedBaggingClassifier(n_estimators=5, warm_start=True)
+    X, y = make_hastie_10_2(n_samples=100, random_state=1)
+    clf = SMOTEBagging(n_estimators=5, warm_start=True)
     clf.fit(X, y)
     clf.set_params(n_estimators=4)
     assert_raises(ValueError, clf.fit, X, y)
@@ -333,10 +308,10 @@ def test_warm_start_smaller_n_estimators():
 
 def test_warm_start_equal_n_estimators():
     # Test that nothing happens when fitting without increasing n_estimators
-    X, y = make_hastie_10_2(n_samples=20, random_state=1)
+    X, y = make_hastie_10_2(n_samples=100, random_state=1)
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=43)
 
-    clf = BalancedBaggingClassifier(n_estimators=5, warm_start=True,
+    clf = SMOTEBagging(n_estimators=5, warm_start=True,
                                     random_state=83)
     clf.fit(X_train, y_train)
 
@@ -353,17 +328,17 @@ def test_warm_start_equal_n_estimators():
 def test_warm_start_equivalence():
     # warm started classifier with 5+5 estimators should be equivalent to
     # one classifier with 10 estimators
-    X, y = make_hastie_10_2(n_samples=20, random_state=1)
+    X, y = make_hastie_10_2(n_samples=100, random_state=1)
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=43)
 
-    clf_ws = BalancedBaggingClassifier(n_estimators=5, warm_start=True,
+    clf_ws = SMOTEBagging(n_estimators=5, warm_start=True,
                                        random_state=3141)
     clf_ws.fit(X_train, y_train)
     clf_ws.set_params(n_estimators=10)
     clf_ws.fit(X_train, y_train)
     y1 = clf_ws.predict(X_test)
 
-    clf = BalancedBaggingClassifier(n_estimators=10, warm_start=False,
+    clf = SMOTEBagging(n_estimators=10, warm_start=False,
                                     random_state=3141)
     clf.fit(X_train, y_train)
     y2 = clf.predict(X_test)
@@ -373,8 +348,8 @@ def test_warm_start_equivalence():
 
 def test_warm_start_with_oob_score_fails():
     # Check using oob_score and warm_start simultaneously fails
-    X, y = make_hastie_10_2(n_samples=20, random_state=1)
-    clf = BalancedBaggingClassifier(n_estimators=5, warm_start=True,
+    X, y = make_hastie_10_2(n_samples=100, random_state=1)
+    clf = SMOTEBagging(n_estimators=5, warm_start=True,
                                     oob_score=True)
     assert_raises(ValueError, clf.fit, X, y)
 
@@ -382,7 +357,7 @@ def test_warm_start_with_oob_score_fails():
 def test_oob_score_removed_on_warm_start():
     X, y = make_hastie_10_2(n_samples=2000, random_state=1)
 
-    clf = BalancedBaggingClassifier(n_estimators=50, oob_score=True)
+    clf = SMOTEBagging(n_estimators=50, oob_score=True)
     clf.fit(X, y)
 
     clf.set_params(warm_start=True, oob_score=False, n_estimators=100)
@@ -395,7 +370,7 @@ def test_oob_score_consistency():
     # Make sure OOB scores are identical when random_state, estimator, and
     # training data are fixed and fitting is done twice
     X, y = make_hastie_10_2(n_samples=200, random_state=1)
-    bagging = BalancedBaggingClassifier(KNeighborsClassifier(),
+    bagging = SMOTEBagging(KNeighborsClassifier(),
                                         max_samples=0.5,
                                         max_features=0.5, oob_score=True,
                                         random_state=1)
@@ -403,15 +378,13 @@ def test_oob_score_consistency():
 
 
 def test_estimators_samples():
-    # Check that format of estimators_samples_ is correct and that results
-    # generated at fit time can be identically reproduced at a later time
-    # using data saved in object attributes.
-    X, y = make_hastie_10_2(n_samples=20, random_state=1)
+    # Check that format of estimators_samples_ is correct
+    X, y = make_hastie_10_2(n_samples=100, random_state=1)
 
-    # remap the y outside of the BalancedBaggingclassifier
+    # remap the y outside of the SMOTEBagging
     # _, y = np.unique(y, return_inverse=True)
-    bagging = BalancedBaggingClassifier(LogisticRegression(), max_samples=0.5,
-                                        max_features=0.5, random_state=1,
+    bagging = SMOTEBagging(LogisticRegression(), max_samples=0.5,
+                                        max_features=0.5, random_state=0,
                                         bootstrap=False)
     bagging.fit(X, y)
 
@@ -425,28 +398,13 @@ def test_estimators_samples():
     assert len(estimators_samples[0]) == len(X)
     assert estimators_samples[0].dtype.kind == 'b'
 
-    # Re-fit single estimator to test for consistent sampling
-    estimator_index = 0
-    estimator_samples = estimators_samples[estimator_index]
-    estimator_features = estimators_features[estimator_index]
-    estimator = estimators[estimator_index]
-
-    X_train = (X[estimator_samples])[:, estimator_features]
-    y_train = y[estimator_samples]
-
-    orig_coefs = estimator.steps[-1][1].coef_
-    estimator.fit(X_train, y_train)
-    new_coefs = estimator.steps[-1][1].coef_
-
-    assert_array_almost_equal(orig_coefs, new_coefs)
-
 
 def test_max_samples_consistency():
     # Make sure validated max_samples and original max_samples are identical
     # when valid integer max_samples supplied by user
     max_samples = 100
     X, y = make_hastie_10_2(n_samples=2*max_samples, random_state=1)
-    bagging = BalancedBaggingClassifier(KNeighborsClassifier(),
+    bagging = SMOTEBagging(KNeighborsClassifier(),
                                         max_samples=max_samples,
                                         max_features=0.5, random_state=1)
     bagging.fit(X, y)
@@ -457,7 +415,7 @@ def test_imb_performance():
     from maatpy.dataset import simulate_dataset
     from sklearn.metrics import cohen_kappa_score
     from sklearn.model_selection import StratifiedShuffleSplit
-    imb = simulate_dataset(n_samples=100, n_features=2, n_classes=2, weights=[0.9, 0.1], random_state=0)
+    imb = simulate_dataset(n_samples=500, n_features=2, n_classes=2, weights=[0.9, 0.1], random_state=0)
     sss = StratifiedShuffleSplit(n_splits=5, test_size=0.3, random_state=0)
     sss.get_n_splits(imb.data, imb.target)
     for train_index, test_index in sss.split(imb.data, imb.target):
@@ -466,7 +424,7 @@ def test_imb_performance():
     orig_clf = BaggingClassifier(random_state=0)
     orig_clf.fit(X_train, y_train)
     orig_score = cohen_kappa_score(orig_clf.predict(X_test), y_test)
-    clf = BalancedBaggingClassifier(random_state=0)
+    clf = SMOTEBagging(random_state=0)
     clf.fit(X_train, y_train)
     score = cohen_kappa_score(clf.predict(X_test), y_test)
     assert score >= orig_score, "Failed with score = %f; BaggingClassifier score= %f" % \
