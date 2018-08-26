@@ -7,26 +7,11 @@ The MaatPy toolbox is written using Python programming language and is deployed 
 * AdaBoost cost sensitive variants AdaCost, AdaC1, AdaC2 and AdaC3
 * Balanced Random Forest Classifier.
 
-as well as certain classes from the imbalanced-learn package that are either used within the above implementations or where shown to perform well during earlier evaluation:
+as well as modifications for the *imblearn* combination samplers:
 
-* Over-sampling
-  * RandomUnderSampler
-  * SMOTE
-* Under-sampling
-  * RandomOverSampler
-  * ClusterCentroids
-  * EditedNearestNeighbours
-  * TomekLinks
 * Combinations
   * SMOTEENN - edited
   * SMOTETomek - edited
-* Ensemble
-  * EasyEnsemble - edited
-* Classifier
-  * BalancedBaggingClassifier
-
-The sampler classes (over-sampling and under-sampling) were included unchanged as some are used in the novel implementations for the package (RandomUnderSampler, EditedNearestNeighbours, TomekLinks, RandomOverSampler and SMOTE) and others (ClusterCentroid) were include 
-due to good performance during earlier evaluation steps.
 
 ## Installation
 ------------
