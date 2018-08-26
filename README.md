@@ -9,9 +9,8 @@ The MaatPy toolbox is written using Python programming language and is deployed 
 
 as well as modifications for the *imblearn* combination samplers:
 
-* Combinations
-  * SMOTEENN - edited
-  * SMOTETomek - edited
+* SMOTEENN
+* SMOTETomek
 
 ## Installation
 ------------
