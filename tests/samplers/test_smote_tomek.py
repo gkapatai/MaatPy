@@ -11,9 +11,9 @@ from pytest import raises
 from sklearn.utils.testing import (assert_allclose,
                                    assert_array_equal)
 
-from maatpy.samplers.combination import SMOTETomek
-from maatpy.samplers.oversampling import SMOTE
-from maatpy.samplers.undersampling import TomekLinks
+from maatpy.samplers.smote_tomek import SMOTETomek
+from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import TomekLinks
 
 RND_SEED = 0
 X = np.array([[0.20622591, 0.0582794], [0.68481731, 0.51935141],

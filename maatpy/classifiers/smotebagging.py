@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.base import clone
 from sklearn.ensemble import BaggingClassifier
 from sklearn.tree import DecisionTreeClassifier
-from maatpy.samplers.oversampling import SMOTE
+from imblearn.over_sampling import SMOTE
 from maatpy.pipeline import Pipeline
 
 __all__ = ['SMOTEBagging']

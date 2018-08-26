@@ -43,9 +43,11 @@ class AdaCost(AdaBoostClassifier):
                There is a trade-off between "learning_rate" and "n_estimators".
         :param algorithm: algorithm: {'adacost', 'adac1', 'adac2', 'adac3'}, optional (default='adacost')
         :param class_weight: dict, list of dicts, “balanced” or None, default=None
-               Weights associated with classes in the form {class_label: weight}. If not given, all classes are
-               supposed to have weight one. For multi-output problems, a list of dicts can be provided in the
-               same order as the columns of y.
+               Weights associated with classes in the form {class_label: weight}. The “balanced” mode uses 
+               the values of y to automatically adjust weights inversely proportional to class frequencies 
+               in the input data as n_samples / (n_classes * np.bincount(y))If not given, all classes are
+               supposed to have weight one. For multi-output problems, a list of dicts can be provided in 
+               the same order as the columns of y.
         :param random_state: int, RandomState instance or None, optional (default=None)
                If int, random_state is the seed used by the random number generator; If RandomState instance,
                random_state is the random number generator; If None, the random number generator is the RandomState

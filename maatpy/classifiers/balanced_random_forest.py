@@ -15,7 +15,7 @@ from sklearn.utils import (check_random_state,
                            check_array,
                            compute_sample_weight)
 
-from maatpy.samplers.undersampling import RandomUnderSampler
+from imblearn.under_sampling import RandomUnderSampler
 
 MAX_INT = np.iinfo(np.int32).max
 
@@ -50,6 +50,25 @@ class BalancedRandomForestClassifier(RandomForestClassifier):
                Whether samples are drawn with replacement.
         :param oob_score: bool, optional (default=False)
                Whether to use out-of-bag samples to estimate the generalization error
+        :param max_depth : integer or None, optional (default=None)
+               The maximum depth of the tree. If None, then nodes are expanded until all leaves are pure
+               or until all leaves contain less than min_samples_split samples.
+        :param criterion : string, optional (default="gini")
+               The function to measure the quality of a split. Supported criteria are "gini" for the 
+               Gini impurity and "entropy" for the information gain.
+               Note: this parameter is tree-specific.
+        :param max_features : int, float, string or None, optional (default="auto")
+               The number of features to consider when looking for the best split:
+               - If int, then consider `max_features` features at each split.
+               - If float, then `max_features` is a percentage and `int(max_features * n_features)`
+               features are considered at each split.
+               - If "auto", then `max_features=sqrt(n_features)`.
+               - If "sqrt", then `max_features=sqrt(n_features)` (same as "auto").
+               - If "log2", then `max_features=log2(n_features)`.
+               - If None, then `max_features=n_features`.
+               Note: the search for a split does not stop until at least one valid partition of the node
+               samples is found, even if it requires to effectively inspect more than ``max_features`` 
+               features.
         :param ratio: str, dict, or callable, optional (default='auto')
                Ratio to use for resampling the data set.
                - If "str", has to be one of: (i) 'minority': resample the minority class;

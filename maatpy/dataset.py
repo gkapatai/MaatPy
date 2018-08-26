@@ -15,6 +15,13 @@ from imblearn.over_sampling import RandomOverSampler
 class Dataset(Bunch):
 
     def __init__(self, data=None, target=None, feature_names=None, target_names=None):
+        """
+
+        :param data:
+        :param target:
+        :param feature_names:
+        :param target_names:
+        """
         self.data = data
         self.target = target
         self.feature_names = feature_names
@@ -80,12 +87,13 @@ class Dataset(Bunch):
         else:
             raise ValueError("The requested dataset cannot be larger than the original dataset")
 
-    def load_from_csv(self, filename, sep=',', output_column=None):
+    def load_from_csv(self, filename, sep=',', output_column=None, ignore=None):
         """
 
         :param filename: path to filename containing the data to load
         :param sep: field separator; default ','
         :param output_column: column containing the outcome
+        :param ignore: column to remove from data; str or list
         :return:
         """
         df = pd.read_csv(filename, sep=sep)
@@ -98,6 +106,8 @@ class Dataset(Bunch):
         else:
             raise ValueError('Please define an output_column; column containing the class defined for each observation '
                              '(row)')
+        if ignore is not None:
+            df.drop(ignore, axis=1, inplace=True)
         self.feature_names = df.columns
         self.data = df.values
 

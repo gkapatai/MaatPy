@@ -25,7 +25,7 @@ from sklearn.utils.testing import (assert_array_equal,
 from maatpy.dataset import Dataset
 from maatpy.classifiers import SMOTEBagging
 from maatpy.pipeline import make_pipeline
-from maatpy.samplers.oversampling import SMOTE
+from imblearn.over_sampling import SMOTE
 
 iris = load_iris()
 imb_iris = Dataset(data=iris.data, target=iris.target, feature_names=iris.feature_names,

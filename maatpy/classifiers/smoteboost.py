@@ -12,7 +12,7 @@ from sklearn.utils import (check_random_state,
                            check_array,
                            safe_indexing)
 from imblearn.utils import check_neighbors_object
-from maatpy.samplers.oversampling import SMOTE
+from imblearn.over_sampling import SMOTE
 
 __all__ = ['SMOTEBoost']
 

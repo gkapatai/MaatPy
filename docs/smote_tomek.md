@@ -1,28 +1,24 @@
-Help on module ensemble:
+Help on module smote_tomek:
 
 NAME
-    ensemble
+    smote_tomek
 
 CLASSES
-    imblearn.ensemble.easy_ensemble.EasyEnsemble(imblearn.ensemble.base.BaseEnsembleSampler)
-        EasyEnsemble
+    imblearn.combine.smote_tomek.SMOTETomek(imblearn.base.SamplerMixin)
+        SMOTETomek
     
-    class EasyEnsemble(imblearn.ensemble.easy_ensemble.EasyEnsemble)
-     |  EasyEnsemble(ratio='auto', return_indices=False, random_state=None, replacement=False, n_subsets=10)
+    class SMOTETomek(imblearn.combine.smote_tomek.SMOTETomek)
+     |  SMOTETomek(ratio='auto', random_state=None, smote=None, tomek=None)
      |  
-     |  Create an ensemble sets by iteratively applying random under-sampling.
-     |  This method iteratively select a random subset and make an ensemble of the
-     |  different sets.
+     |  Class to perform over-sampling using SMOTE and cleaning using Tomek links.
+     |  Combine over- and under-sampling using SMOTE and Tomek links.
      |  
-     |  Inherits from imblearn.ensemble.EasyEnsemble. Edited to:
-     |  - output a single dataset instead of subsets which allows it to work with a classifier in make_pipeline
-     |  - accept a dictionary as ratio; previously it would crash when one was given.
+     |  Inherits from imblearn.combine.SMOTETomek. Edited to perform under-sampling first to remove Tomek links
+     |  and then perform oversampling with SMOTE.
      |  
      |  Method resolution order:
-     |      EasyEnsemble
-     |      imblearn.ensemble.easy_ensemble.EasyEnsemble
-     |      imblearn.ensemble.base.BaseEnsembleSampler
-     |      imblearn.base.BaseSampler
+     |      SMOTETomek
+     |      imblearn.combine.smote_tomek.SMOTETomek
      |      imblearn.base.SamplerMixin
      |      abc.NewBase
      |      sklearn.base.BaseEstimator
@@ -30,8 +26,8 @@ CLASSES
      |  
      |  Methods defined here:
      |  
-     |  __init__(self, ratio='auto', return_indices=False, random_state=None, replacement=False, n_subsets=10)
-     |      :param ratio: tr, dict, or callable, optional (default='auto')
+     |  __init__(self, ratio='auto', random_state=None, smote=None, tomek=None)
+     |      :param ratio: str, dict, or callable, optional (default='auto')
      |             Ratio to use for resampling the data set.
      |             - If "str", has to be one of: (i) 'minority': resample the minority class;
      |               (ii) 'majority': resample the majority class,
@@ -43,21 +39,19 @@ CLASSES
      |               of samples.
      |             - If callable, function taking "y" and returns a "dict". The keys correspond to the targeted classes.
      |               The values correspond to the desired number of samples.
-     |      :param return_indices: bool, optional (default=False)
-     |             Whether or not to return the indices of the samples randomly selected from the majority class.
      |      :param random_state: int, RandomState instance or None, optional (default=None)
      |             If int, random_state is the seed used by the random number generator; If RandomState instance,
      |             random_state is the random number generator; If None, the random number generator is the RandomState
      |             instance used by 'np.random'.
-     |      :param replacement:  bool, optional (default=False)
-     |             Whether or not to sample randomly with replacement or not.
-     |      :param n_subsets: int, optional (default=10)
-     |             Number of subsets to generate.
+     |      :param smote: object, optional (default=SMOTE())
+     |             The :class: imblearn.over_sampling.SMOTE object to use. If none provide a
+     |             :class: imblearn.over_sampling.SMOTE object with default parameters will be given.
+     |      :param tomek: object, optional (default=TomekLinks())
+     |             The :class: imblearn.under_sampling.TomekLinks object to use. If none provide a
+     |             :class: imblearn.under_sampling.TomekLinks object with default parameters will be given.
      |  
      |  fit(self, X, y)
-     |      Find the classes statistics before performing sampling.
-     |      Adapted to allow for ratio = 'dict' by recalculating the dict.values = dict.value / n_subsets.
-     |      
+     |      Find the classes statistics before to perform sampling.
      |      
      |      :param X: {array-like, sparse matrix}, shape (n_samples, n_features)
      |             Matrix containing the data which have to be sampled.
@@ -159,9 +153,9 @@ CLASSES
      |      list of weak references to the object (if defined)
 
 DATA
-    __all__ = ['EasyEnsemble']
+    __all__ = ['SMOTETomek']
 
 FILE
-    /Users/georgiakapatai/Dropbox/Courses/MScBirkbeck/FinalProject/Project/MaatPy/maatpy/samplers/ensemble.py
+    /Users/georgiakapatai/Dropbox/Courses/MScBirkbeck/FinalProject/Project/MaatPy/maatpy/samplers/smote_tomek.py
 
 

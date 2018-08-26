@@ -1,15 +1,4 @@
-from .ensemble import EasyEnsemble
-from .combination import (SMOTETomek,
-                          SMOTEENN)
-from .undersampling import (RandomUnderSampler,
-                            EditedNearestNeighbours,
-                            ClusterCentroids,
-                            TomekLinks)
-from .oversampling import (SMOTE,
-                           RandomOverSampler)
+from .smote_tomek import SMOTETomek
+from .smote_enn import SMOTEENN
 
-
-__all__ = ['EasyEnsemble', 'SMOTEENN', 'SMOTETomek',
-           'RandomUnderSampler', 'ClusterCentroids',
-           'EditedNearestNeighbours', 'TomekLinks',
-           'SMOTE', 'RandomOverSampler']
+__all__ = ['SMOTEENN', 'SMOTETomek']

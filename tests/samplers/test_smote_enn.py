@@ -10,9 +10,9 @@ from pytest import raises
 
 from sklearn.utils.testing import assert_allclose, assert_array_equal
 
-from maatpy.samplers.combination import SMOTEENN
-from maatpy.samplers.undersampling import EditedNearestNeighbours
-from maatpy.samplers.oversampling import SMOTE
+from maatpy.samplers.smote_enn import SMOTEENN
+from imblearn.under_sampling import EditedNearestNeighbours
+from imblearn.over_sampling import SMOTE
 
 RND_SEED = 0
 X = np.array([[-0.8201808, 0.80937119], [-0.1586601, 0.00971665],
