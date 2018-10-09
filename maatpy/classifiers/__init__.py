@@ -1,4 +1,3 @@
-from .balanced_bagging_classifier import BalancedBaggingClassifier
 from .smoteboost import SMOTEBoost
 from .smotebagging import SMOTEBagging
 from .adacost import AdaCost
