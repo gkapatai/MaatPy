@@ -2,8 +2,10 @@
 import numpy as np
 from sklearn.base import is_regressor
 from sklearn.ensemble import AdaBoostClassifier
-from sklearn.ensemble.forest import BaseForest
-from sklearn.tree.tree import BaseDecisionTree
+#from sklearn.ensemble.forest import BaseForest
+from sklearn.ensemble._forest import BaseForest
+#from sklearn.tree.tree import BaseDecisionTree
+from sklearn.tree import BaseDecisionTree
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils import (check_random_state,
                            check_X_y,
@@ -268,7 +270,9 @@ class AdaCost(AdaBoostClassifier):
         y_ = column_or_1d(y, warn=True)
         check_classification_targets(y)
         cls, y = np.unique(y_, return_inverse=True)
-        class_weight_ = compute_class_weight(self.class_weight, cls, y_)
+        #changed by fayzad
+        #class_weight_ = compute_class_weight(self.class_weight, cls, y_)
+        class_weight_ = compute_class_weight(class_weight=self.class_weight, classes=cls, y=y_)
         self.class_weight_ = {i: class_weight_[i] for i in range(len(class_weight_))}
         if len(cls) < 2:
             raise ValueError(
@@ -308,8 +312,9 @@ class AdaCost(AdaBoostClassifier):
                  that of the 'classes_' attribute.
         """
         check_is_fitted(self, "n_classes_")
-        X = self._validate_X_predict(X)
-
+        #changed by fayzad
+        #X = self._validate_X_predict(X)
+        X = self._check_X(X)
         classes = self.classes_[:, np.newaxis]
         pred = sum((estimator.predict(X) == classes).T * w
                    for estimator, w in zip(self.estimators_,

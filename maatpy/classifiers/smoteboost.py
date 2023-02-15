@@ -4,13 +4,19 @@ from collections import Counter
 from sklearn.base import (clone,
                           is_regressor)
 from sklearn.ensemble import AdaBoostClassifier
-from sklearn.ensemble.forest import BaseForest
+#from sklearn.ensemble.forest import BaseForest
+from sklearn.ensemble._forest import BaseForest
 from sklearn.preprocessing import normalize
-from sklearn.tree.tree import BaseDecisionTree
+#from sklearn.tree.tree import BaseDecisionTree
+from sklearn.tree import BaseDecisionTree
+#from sklearn.utils import (check_random_state,
+                           #check_X_y,
+                           #check_array,
+                           #safe_indexing)
 from sklearn.utils import (check_random_state,
                            check_X_y,
                            check_array,
-                           safe_indexing)
+                           _safe_indexing)
 from imblearn.utils import check_neighbors_object
 from imblearn.over_sampling import SMOTE
 
