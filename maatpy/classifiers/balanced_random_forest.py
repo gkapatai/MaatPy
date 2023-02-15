@@ -8,7 +8,8 @@ from joblib import (Parallel,
 from scipy.sparse import issparse
 from sklearn.base import clone
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble.forest import _generate_sample_indices
+#from sklearn.ensemble.forest import _generate_sample_indices
+from sklearn.ensemble._forest import _generate_sample_indices
 from sklearn.exceptions import DataConversionWarning
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils import (check_random_state,
